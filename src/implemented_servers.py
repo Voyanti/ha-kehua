@@ -1,11 +1,6 @@
 from enum import Enum
-
-from sungrow_inverter import SungrowInverter
-from sungrow_logger import SungrowLogger
-from sungrow_meter import AcrelMeter
+from kehua_inverter import KehuaInverter
 
 # Declare all defined server abstractions here. Add to schema in config.yaml to enable selecting.
 class ServerTypes(Enum):
-    SUNGROW_INVERTER = SungrowInverter
-    SUNGROW_LOGGER = SungrowLogger
-    ACREL_METER = AcrelMeter
+    KEHUA_INVERTER = KehuaInverter
