@@ -1,3 +1,9 @@
+if __name__ == "__main__":
+    import sys, os
+    p = os.path.abspath('modbus_mqtt')
+    print(p)
+    sys.path.insert(0, p)
+
 from enums import RegisterTypes, DataType
 from server import Server
 from pymodbus.client import ModbusSerialClient
@@ -11,7 +17,7 @@ class KehuaInverter(Server):
     Inverter register map definition. Includes functions for decoding, encoding, model reading and setup of relevant register for specific models.
 
     """
-    supported_models = () 
+    supported_models = ('BCS500K-A') 
     manufacturer = "Kehua"
 
     # Register Map
@@ -85,6 +91,9 @@ class KehuaInverter(Server):
         'Total Gains': {'addr': 5049, 'count': 2, 'dtype': DataType.I32, 'unit': 'Yuan', 'device_class': 'monetary', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total', 'multiplier':1},
         'Current Electricity Price': {'addr': 5051, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.0001, 'unit': 'Yuan', 'device_class': 'monetary', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
 
+        'Available Power': {'addr': 5054, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': 'apparent_power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
+        'Remote Control Status': {'addr': 5055, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
+        
         # Battery Measurements
         'BMS System Status': {'addr': 5200, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
         'Total Battery Voltage': {'addr': 5202, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'V', 'device_class': 'voltage', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
@@ -97,8 +106,6 @@ class KehuaInverter(Server):
 
         # Status and Power Availability
         'On-Grid/Off-Grid Status': {'addr': 5053, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
-        'Available Power': {'addr': 5054, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': 'apparent_power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
-        'Remote Control Status': {'addr': 5055, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
     }
     ################################################################################################################################################
 
@@ -166,3 +173,34 @@ class KehuaInverter(Server):
     def _validate_write_val(self, register_name:str, val):
         """ Model-specific writes might be necessary to support more models """
         assert val in self.write_valid_values[register_name]
+
+if __name__ == "__main__":
+
+
+    def write_mqtt_migration_discovery_and_state():
+        import pandas as pd
+        import string
+
+        valid_chars = tuple((*list(string.ascii_lowercase), '_', *[str(i) for i in range(9)]))
+
+        def toalnum(s: str):
+            if s.isalnum(): return s
+            
+            res = s.lower().replace(' ', '_').replace('.', '_').replace('-', '_').replace('(', '').replace(')', '').replace('/', '_')
+            if not all([char in valid_chars for char in res]): print(res); assert False
+            return res
+
+        writer = pd.ExcelWriter('mqtt_migration.xlsx')
+
+        entity_ids = []
+        for name, param in KehuaInverter.input_registers.items():
+            
+
+            discovery_topic_new = f"homeassistant/sensor/KH1/{toalnum(name)}/config"
+            state_topic_new = f"modbus/KH1/{toalnum(name)}"
+            entity_ids.append((name, discovery_topic_new, state_topic_new))
+
+        df = pd.DataFrame(entity_ids, columns=('name', 'discovery_topic_new', 'state_topic_new'))
+        df.to_excel(writer, sheet_name=f'kehua')
+
+        writer.close()
