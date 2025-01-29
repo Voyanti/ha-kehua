@@ -26,6 +26,8 @@ options:
       type: "TCP"
       host: "192.168.1.91"
       port: 502
+  # mqtt_host: "localhost"
+  # mqtt_port: 1884
   mqtt_host: "core-mosquitto"
   mqtt_port: 1883
   mqtt_user: "mqtt"
