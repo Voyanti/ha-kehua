@@ -17,7 +17,7 @@ class KehuaInverter(Server):
     Inverter register map definition. Includes functions for decoding, encoding, model reading and setup of relevant register for specific models.
 
     """
-    supported_models = ('BCS500K-A') 
+    supported_models = ('BCS500K-A',) 
     manufacturer = "Kehua"
 
     # Register Map
@@ -68,17 +68,17 @@ class KehuaInverter(Server):
         # Per-Phase Power Details
         'Phase-U Apparent Power': {'addr': 5026, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': 'apparent_power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-U Active Power': {'addr': 5027, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.1, 'unit': 'kW', 'device_class': 'power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
-        'Phase-U Power Factor': {'addr': 5028, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
+        'Phase-U Power Factor': {'addr': 5028, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'unit': '', 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-U Load Capacity': {'addr': 5029, 'count': 1, 'dtype': DataType.U16, 'unit': '%', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement', 'device_class':'enum', 'multiplier':1},
 
         'Phase-V Apparent Power': {'addr': 5030, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': 'apparent_power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-V Active Power': {'addr': 5031, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.1, 'unit': 'kW', 'device_class': 'power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
-        'Phase-V Power Factor': {'addr': 5032, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
+        'Phase-V Power Factor': {'addr': 5032, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'unit': '', 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-V Load Capacity': {'addr': 5033, 'count': 1, 'dtype': DataType.U16, 'unit': '%', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement', 'device_class':'enum', 'multiplier':1},
 
         'Phase-W Apparent Power': {'addr': 5034, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': 'apparent_power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-W Active Power': {'addr': 5035, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.1, 'unit': 'kW', 'device_class': 'power', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
-        'Phase-W Power Factor': {'addr': 5036, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
+        'Phase-W Power Factor': {'addr': 5036, 'count': 1, 'dtype': DataType.I16, 'multiplier': 0.01, 'unit': '', 'device_class': 'power_factor', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Phase-W Load Capacity': {'addr': 5037, 'count': 1, 'dtype': DataType.U16, 'unit': '%', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement', 'device_class':'enum', 'multiplier':1},
 
         # Energy Measurements
@@ -111,6 +111,11 @@ class KehuaInverter(Server):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.parameters = KehuaInverter.input_registers
+        self.manufacturer = KehuaInverter.manufacturer
+        self.model = KehuaInverter.supported_models[0]
+        self.supported_models = KehuaInverter.supported_models
+        self.write_parameters = {}
         # self.model = None
 
     def read_model(self, device_type_code_param_key="Device Model"):
