@@ -108,7 +108,9 @@ class KehuaInverter(Server):
         # 'On-Grid/Off-Grid Status': {'addr': 5053, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
     }
     ################################################################################################################################################
-
+    for key in input_registers:
+        input_registers[key]["addr"] = 1+input_registers[key]["addr"]
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parameters = KehuaInverter.input_registers
