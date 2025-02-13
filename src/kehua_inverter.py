@@ -157,7 +157,7 @@ class KehuaInverter(Server):
         return struct.unpack('>i', struct.pack('>I', combined))[0]
 
     def _decode_utf8(registers):
-        return ModbusSerialClient.convert_from_registers(registers=registers, data_type=ModbusSerialClient.DATATYPE.UTF8)
+        return ModbusSerialClient.convert_from_registers(registers=registers, data_type=ModbusSerialClient.DATATYPE.STRING)
 
     @classmethod
     def _decoded(cls, registers, dtype):
@@ -180,32 +180,32 @@ class KehuaInverter(Server):
         assert val in self.write_valid_values[register_name]
 
 if __name__ == "__main__":
+    pass
 
+    # def write_mqtt_migration_discovery_and_state():
+    #     import pandas as pd
+    #     import string
 
-    def write_mqtt_migration_discovery_and_state():
-        import pandas as pd
-        import string
+    #     valid_chars = tuple((*list(string.ascii_lowercase), '_', *[str(i) for i in range(9)]))
 
-        valid_chars = tuple((*list(string.ascii_lowercase), '_', *[str(i) for i in range(9)]))
-
-        def toalnum(s: str):
-            if s.isalnum(): return s
+    #     def toalnum(s: str):
+    #         if s.isalnum(): return s
             
-            res = s.lower().replace(' ', '_').replace('.', '_').replace('-', '_').replace('(', '').replace(')', '').replace('/', '_')
-            if not all([char in valid_chars for char in res]): print(res); assert False
-            return res
+    #         res = s.lower().replace(' ', '_').replace('.', '_').replace('-', '_').replace('(', '').replace(')', '').replace('/', '_')
+    #         if not all([char in valid_chars for char in res]): print(res); assert False
+    #         return res
 
-        writer = pd.ExcelWriter('mqtt_migration.xlsx')
+    #     writer = pd.ExcelWriter('mqtt_migration.xlsx')
 
-        entity_ids = []
-        for name, param in KehuaInverter.input_registers.items():
+    #     entity_ids = []
+    #     for name, param in KehuaInverter.input_registers.items():
             
 
-            discovery_topic_new = f"homeassistant/sensor/KH1/{toalnum(name)}/config"
-            state_topic_new = f"modbus/KH1/{toalnum(name)}"
-            entity_ids.append((name, discovery_topic_new, state_topic_new))
+    #         discovery_topic_new = f"homeassistant/sensor/KH1/{toalnum(name)}/config"
+    #         state_topic_new = f"modbus/KH1/{toalnum(name)}"
+    #         entity_ids.append((name, discovery_topic_new, state_topic_new))
 
-        df = pd.DataFrame(entity_ids, columns=('name', 'discovery_topic_new', 'state_topic_new'))
-        df.to_excel(writer, sheet_name=f'kehua')
+    #     df = pd.DataFrame(entity_ids, columns=('name', 'discovery_topic_new', 'state_topic_new'))
+    #     df.to_excel(writer, sheet_name=f'kehua')
 
-        writer.close()
+    #     writer.close()
