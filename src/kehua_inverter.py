@@ -105,7 +105,7 @@ class KehuaInverter(Server):
         'Charge Limit Voltage': {'addr': 5208, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'V', 'device_class': 'voltage', 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
 
         # Status and Power Availability
-        'On-Grid/Off-Grid Status': {'addr': 5053, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
+        # 'On-Grid/Off-Grid Status': {'addr': 5053, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': 'enum', 'multiplier':1, 'unit':''},
     }
     ################################################################################################################################################
 

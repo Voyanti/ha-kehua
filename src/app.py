@@ -4,11 +4,6 @@ import atexit
 import logging
 from queue import Queue
 
-if __name__ == "__main__":
-    import sys, os
-    p = os.path.abspath('modbus_mqtt')
-    print(p)
-    sys.path.insert(0, p)
 from loader import load_options
 from options import Options
 from client import Client
@@ -140,7 +135,7 @@ try:
     # Publish Discovery Topics
     for server in servers:
         # mqtt_client.subscribe_write_topics(server)
-        mqtt_client.publish_discovery_topics(server)
+        mqtt_client.publish_discovery_topics(server, "kehua")
 
     # every read_interval seconds, read the registers and publish to mqtt
     while True:
