@@ -3,6 +3,7 @@ from paho.mqtt.enums import CallbackAPIVersion
 import json
 import logging
 from loader import Options
+from typing import Optional
 
 from random import getrandbits
 from time import time, sleep
@@ -51,7 +52,7 @@ class MqttClient(mqtt.Client):
         self.on_disconnect = on_disconnect
         self.on_message = on_message
 
-    def publish_discovery_topics(self, server):
+    def publish_discovery_topics(self, server, unique_id_base: Optional[str] = None):
         # TODO check if more separation from server is necessary/ possible
         nickname = server.unique_name
         if not server.model or not server.manufacturer or not server.serial or not nickname or not server.parameters:
@@ -98,6 +99,9 @@ class MqttClient(mqtt.Client):
                 "availability_topic": availability_topic,
                 "device": device
             }
+            
+            # support overwriting unique_id for backwards compatibility with previous add-on voyanti-kehua
+            if unique_id_base is not None: discovery_payload["unique_id"] = f"{unique_id_base}_{slugify(register_name)}"
 
             discovery_topic = f"{self.ha_discovery_topic}/number/{nickname}/{slugify(register_name)}/config"
             self.publish(discovery_topic, json.dumps(discovery_payload), retain=True)
