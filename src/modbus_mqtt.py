@@ -10,7 +10,7 @@ from time import time, sleep
 from queue import Queue
 
 logger = logging.getLogger(__name__)
-RECV_Q = Queue()
+RECV_Q: Queue = Queue()
 
 def slugify(text):
     return text.replace(' ', '_').replace('(', '').replace(')', '').replace('/', 'OR').replace('&', ' ').replace(':', '').replace('.', '').lower()
@@ -19,7 +19,7 @@ class MqttClient(mqtt.Client):
     """ 
         paho MQTT abstraction for home assistant
     """
-    def __init__(self, options: Options):
+    def __init__(self, options: Options) -> None:
         def generate_uuid():
             random_part = getrandbits(64)
             timestamp = int(time() * 1000)  # Get current timestamp in milliseconds
@@ -53,8 +53,12 @@ class MqttClient(mqtt.Client):
         self.on_message = on_message
 
     def publish_discovery_topics(self, server, unique_id_base: Optional[str] = None):
+        while not self.is_connected():
+            logger.info(f"Not connected to mqtt broker yet, sleep 100ms and retry. Before publishing discovery topics.")
+            sleep(0.1)
+
         # TODO check if more separation from server is necessary/ possible
-        nickname = server.unique_name
+        nickname = server.name
         if not server.model or not server.manufacturer or not server.serial or not nickname or not server.parameters:
             logging.info(f"Server not properly configured. Cannot publish MQTT info")
             raise ValueError(f"Server not properly configured. Cannot publish MQTT info")
@@ -107,12 +111,12 @@ class MqttClient(mqtt.Client):
             self.publish(discovery_topic, json.dumps(discovery_payload), retain=True)
 
     def publish_to_ha(self, register_name, value, server):
-        nickname = server.unique_name
+        nickname = server.name
         state_topic = f"{self.base_topic}/{nickname}/{slugify(register_name)}/state"
         self.publish(state_topic, value) #, retain=True)
 
     def publish_availability(self, avail, server):
-        nickname = server.unique_name
+        nickname = server.name
         availability_topic = f"{self.base_topic}_{nickname}/availability"
         self.publish(availability_topic, "online" if avail else "offline", retain=True)
         
