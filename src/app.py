@@ -4,12 +4,12 @@ import atexit
 import logging
 from queue import Queue
 
-from loader import load_options
-from options import Options
-from client import Client
-from implemented_servers import ServerTypes
-from server import Server
-from modbus_mqtt import MqttClient, RECV_Q
+from src.loader import load_validate_options
+from src.options import Options
+from src.client import Client
+from src.implemented_servers import ServerTypes
+from src.server import Server
+from src.modbus_mqtt import MqttClient, RECV_Q
 from paho.mqtt.enums import MQTTErrorCode
 from paho.mqtt.client import MQTTMessage
 
@@ -18,7 +18,7 @@ import sys
 SPOOF = False
 if len(sys.argv) > 1:
     if sys.argv[1] == "SPOOF":
-        from client import SpoofClient as Client
+        from src.client import SpoofClient as Client
         SPOOF = True
 
 logging.basicConfig(
@@ -95,48 +95,6 @@ def sleep_if_midnight(midnight_sleep_enabled=True, minutes_wakeup_after=5) -> No
         sleep(sleep_duration)
 
 
-try:
-    # Read configuration
-    OPTIONS: Options = load_options()
-
-    logger.info("Instantiate clients")
-    clients = [Client(cl_options) for cl_options in OPTIONS.clients]
-    logger.info(f"{len(clients)} clients set up")
-    
-    logger.info("Instantiate servers")
-    servers = [ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients) for sr in OPTIONS.servers]
-    logger.info(f"{len(servers)} servers set up")
-    # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
-
-    sleep_if_midnight()
-
-    # Connect to clients
-    for client in clients:
-        client.connect()
-
-    # Connect to Servers
-    for server in servers:
-        if SPOOF: server.model = "spoof"
-        else: 
-            if not server.is_available():
-                logger.error(f"Server {server.unique_name} not available")
-                raise ConnectionError()                             
-            server.set_model()
-            server.setup_valid_registers_for_model()
-
-    # Setup MQTT Client
-    mqtt_client = MqttClient(OPTIONS)
-    succeed: MQTTErrorCode = mqtt_client.connect(host=OPTIONS.mqtt_host, port=OPTIONS.mqtt_port)
-    if succeed.value != 0: logger.info(f"MQTT Connection error: {succeed.name}, code {succeed.value}")
-    
-    sleep(read_interval)
-    mqtt_client.loop_start()
-    
-    # Publish Discovery Topics
-    for server in servers:
-        # mqtt_client.subscribe_write_topics(server)
-        mqtt_client.publish_discovery_topics(server, "kehua")
-
     # every read_interval seconds, read the registers and publish to mqtt
 def loop(servers: list[Server], mqtt_client: MqttClient, midnight_sleep_enabled, minutes_wakeup_after, pause_interval) -> None:
     while True:
@@ -204,7 +162,7 @@ def main() -> None:
 
         # Publish Discovery Topics
         for server in servers:
-            mqtt_client.publish_discovery_topics(server)
+            mqtt_client.publish_discovery_topics(server, "kehua")
 
         # every read_interval seconds, read the registers and publish to mqtt
         loop(servers, mqtt_client, midnight_sleep_enabled, minutes_wakeup_after, pause_interval)

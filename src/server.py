@@ -24,11 +24,11 @@ class Server(metaclass=abc.ABCMeta):
         self.connected_client: Client = connected_client
 
         # Define in implementation
-        self.supported_models: list = []
+        self.supported_models: tuple[str, ...] = tuple("",)
         self.manufacturer: str | None = None
         self.model: str | None = None
         self.device_info: dict | None = None
-        self.parameters: Optional[dict[str, ParamInfo]] = None
+        self.parameters: dict[str, dict]
 
         # Optional: if used for home assistant
         self.ha_parameters: Optional[dict[str, HAParamInfo]] = None
@@ -91,36 +91,36 @@ class Server(metaclass=abc.ABCMeta):
 
         return val
 
-    def write_registers(self, value: float, parameter_name: str):
-        """
-        Write to an individual register using pymodbus.
+    # def write_registers(self, value: float, parameter_name: str):
+    #     """
+    #     Write to an individual register using pymodbus.
 
-        Reuires implementation of the abstract methods
-        'Server._validate_write_val()' and 'Server._encode()'
-        """
-        logger.info(f"Validating write message")
-        self._validate_write_val(parameter_name, value)
+    #     Reuires implementation of the abstract methods
+    #     'Server._validate_write_val()' and 'Server._encode()'
+    #     """
+    #     logger.info(f"Validating write message")
+    #     # self._validate_write_val(parameter_name, value)
 
-        param = self.parameters[parameter_name]
-        address = param["addr"]
-        dtype = param["dtype"]
-        multiplier = param["multiplier"]
-        count = param["count"]
-        unit = param["unit"]
-        slave_id = self.modbus_id
-        register_type = param["register_type"]
+    #     param = self.parameters[parameter_name]
+    #     address = param["addr"]
+    #     dtype = param["dtype"]
+    #     multiplier = param["multiplier"]
+    #     count = param["count"]
+    #     unit = param["unit"]
+    #     slave_id = self.modbus_id
+    #     register_type = param["register_type"]
 
-        if multiplier != 1:
-            value /= multiplier
-        values = self._encoded(value)
+    #     if multiplier != 1:
+    #         value /= multiplier
+    #     values = self._encoded(value)
 
-        logger.info(
-            f"Writing {value=} {unit=} to param {parameter_name} at {address=}, {dtype=}, {multiplier=}, {count=}, {register_type=}, {slave_id=}"
-        )
+    #     logger.info(
+    #         f"Writing {value=} {unit=} to param {parameter_name} at {address=}, {dtype=}, {multiplier=}, {count=}, {register_type=}, {slave_id=}"
+    #     )
 
-        self.connected_client.client.write_registers(
-            address=address - 1, value=values, slave=slave_id
-        )
+    #     self.connected_client.client.write_registers(
+    #         address=address - 1, value=values, slave=slave_id
+    #     )
 
     @abc.abstractmethod
     def read_model(self) -> str:
