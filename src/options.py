@@ -23,7 +23,7 @@ class ModbusTCPOptions(ClientOptions):
 
 @dataclass
 class ModbusRTUOptions(ClientOptions):
-    port: int
+    port: str
     baudrate: int
     bytesize: int
     parity: bool

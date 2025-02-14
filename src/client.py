@@ -47,7 +47,7 @@ class Client:
             raise ValueError(f"unsupported register type {register_type}")
         return result
 
-    def connect(self, num_retries=2, sleep_interval=3):
+    def connect(self, num_retries=2, sleep_interval=3) -> None:
         logger.info(f"Connecting to client {self}")
 
         for i in range(num_retries):
