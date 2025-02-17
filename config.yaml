@@ -32,7 +32,7 @@ options:
   mqtt_host: "core-mosquitto"
   mqtt_port: 1883
   mqtt_user: "mqtt"
-  mqtt_password: "mqtt"
+  mqtt_password: "mqtt-users"
   mwtt_ha_discovery_topic: "homeassistant"
   mqtt_base_topic: "modbus"
 schema:
