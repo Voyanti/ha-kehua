@@ -4,6 +4,7 @@ if __name__ == "__main__":
     print(p)
     sys.path.insert(0, p)
 
+from typing import final
 from enums import RegisterTypes, DataType
 from server import Server
 from pymodbus.client import ModbusSerialClient
@@ -12,14 +13,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+@final
 class KehuaInverter(Server):
     """
     Inverter register map definition. Includes functions for decoding, encoding, model reading and setup of relevant register for specific models.
 
     """
-    supported_models = ('BCS500K-A',) 
-    manufacturer = "Kehua"
-
     # Register Map
     ################################################################################################################################################
     input_registers = {
@@ -111,12 +110,24 @@ class KehuaInverter(Server):
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.parameters = KehuaInverter.input_registers
-        self.manufacturer = KehuaInverter.manufacturer
-        self.model = KehuaInverter.supported_models[0]
-        self.supported_models = KehuaInverter.supported_models
+        self._parameters = KehuaInverter.input_registers
+        self._manufacturer = "Kehua"
+        self._supported_models = ('BCS500K-A',)
+        self._model = self._supported_models[0]
         self.write_parameters = {}
         # self.model = None
+
+    def parameters(self):
+        return self._parameters
+    
+    def manufacturer(self):
+        return self._manufacturer
+
+    def supported_models(self):
+        return self._supported_models
+
+    def model(self):
+        return self._model
 
     def read_model(self, device_type_code_param_key="Device Model"):
         """

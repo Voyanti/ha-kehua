@@ -1,5 +1,5 @@
 name: "Kehua Inverter"
-version: "0.1.3"
+version: "0.1.4"
 slug: "voyanti_kehua"
 description: "Kehua Inverter"
 init: false
