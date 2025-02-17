@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
+
 @dataclass
 class ServerOptions:
     """ Modbus Server Options as read from config json"""
@@ -10,16 +11,19 @@ class ServerOptions:
     connected_client: str
     modbus_id: int
 
+
 @dataclass
 class ClientOptions:
     """ Modbus Client Options as read from config json"""
     name: str
     type: str
 
+
 @dataclass
 class ModbusTCPOptions(ClientOptions):
     host: str
     port: int
+
 
 @dataclass
 class ModbusRTUOptions(ClientOptions):
@@ -28,6 +32,7 @@ class ModbusRTUOptions(ClientOptions):
     bytesize: int
     parity: bool
     stopbits: int
+
 
 @dataclass
 class Options:

@@ -4,8 +4,8 @@ import os
 import logging
 import yaml
 from cattrs import structure, unstructure, Converter
-from options import *
-from implemented_servers import ServerTypes
+from .options import *
+from .implemented_servers import ServerTypes
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,8 @@ def load_options(json_rel_path="/data/options.json") -> Options:
     else:
         logger.info("ConfigLoader error")
         logger.info(os.path.join(os.getcwd(), json_rel_path))
-        raise FileNotFoundError(f"Config options json/yaml not found at {os.path.join(os.getcwd(), json_rel_path)}")
+        raise FileNotFoundError(
+            f"Config options json/yaml not found at {os.path.join(os.getcwd(), json_rel_path)}")
 
     opts = converter.structure(data, Options)
     return opts

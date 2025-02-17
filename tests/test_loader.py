@@ -1,12 +1,12 @@
 import unittest
-from loader import *
-from options import *
+from src.loader import *
+from src.options import *
 
 
 class TestLoaders(unittest.TestCase):
     def setUp(self):
         self.yaml_path = "config.yaml"
-    
+
     # Validaters
     def test_validate_names_raises(self):
         with self.assertRaisesRegex(
