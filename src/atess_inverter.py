@@ -18,7 +18,7 @@ class AtessInverter(Server):
         self._supported_models = ('PCS150', 'PCS500', 'PBD250') 
         self._serialnum = "unknown"
         self._parameters = atess_parameters
-        self._write_parameters = None
+        self._write_parameters = {}
 
     @property
     def manufacturer(self):
@@ -35,7 +35,6 @@ class AtessInverter(Server):
     @property
     def write_parameters(self):
         return self._write_parameters
-    
         
     def read_model(self):
         model = self.read_registers("Hardware Version")
