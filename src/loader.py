@@ -30,7 +30,7 @@ def validate_names(names: list) -> None:
         raise ValueError(f"Device/ Client names must be unique")
 
     if not all([c.isalnum() for c in names]):
-        raise ValueError(f"Client names must be alphanumeric")
+        raise ValueError(f"Client and Device names must be alphanumeric")
 
 
 def validate_server_implemented(servers: list):
