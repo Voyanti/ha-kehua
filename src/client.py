@@ -2,7 +2,7 @@ from typing import Optional
 from .enums import RegisterTypes
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
-from pymodbus.pdu import ExceptionResponse
+from pymodbus.pdu import ExceptionResponse, ModbusPDU
 import logging
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from time import sleep
@@ -18,6 +18,15 @@ class Client:
     """
 
     def __init__(self, cl_options: ModbusTCPOptions | ModbusRTUOptions):
+        """
+            Initialised from modbus_mqtt.loader.ClientOptions object
+
+            Parameters:
+            -----------
+                - cl_options: modbus_mqtt.loader.ClientOptions - options as read from config json
+
+            TODO move to classmethod, to separate home-assistant dependency out
+        """
         self.name = cl_options.name
         self.client: ModbusSerialClient | ModbusTcpClient
 
@@ -122,10 +131,9 @@ class Client:
         else:
             logger.error(
                 f"Non Standard Modbus Exception. Cannot Decode Response")
-            
-        
 
-class SpoofClient(Client):
+
+class SpoofClient:
     """
         Spoofed Modbus client representation: name, nickname (ha_display_name), and pymodbus client.
 

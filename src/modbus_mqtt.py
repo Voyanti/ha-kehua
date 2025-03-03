@@ -4,7 +4,7 @@ import json
 import logging
 
 from .helpers import slugify
-from .loader import AppOptions
+from .loader import Options
 
 from random import getrandbits
 from time import time, sleep
@@ -18,7 +18,7 @@ class MqttClient(mqtt.Client):
     """
         paho MQTT abstraction for home assistant
     """
-    def __init__(self, options: AppOptions) -> None:
+    def __init__(self, options: Options) -> None:
         def generate_uuid():
             random_part = getrandbits(64)
             # Get current timestamp in milliseconds
@@ -44,13 +44,35 @@ class MqttClient(mqtt.Client):
         def on_disconnect(client, userdata, message):
             logger.info("Disconnected from MQTT broker")
 
-        def on_message(client, userdata, msg):
+        def on_message(client, userdata, message):
             logger.info("Received message on MQTT")
-            self.message_handler(msg.topic, msg.payload.decode('utf-8'), self, )
+            self.message_handler(message)
 
         self.on_connect = on_connect
         self.on_disconnect = on_disconnect
         self.on_message = on_message
+
+    def message_handler(self, msg):
+        """
+            Writes appropriate server registers for each message in mqtt receive queue
+        """
+        # command_topic = f"{self.base_topic}/{server.nickname}/{slugify(register_name)}/set"
+        server_ha_display_name: str = msg.topic.split('/')[1]
+        s = None
+        for s in self.servers: 
+            if s.name == server_ha_display_name:
+                server = s
+        if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
+        register_name: str = msg.topic.split('/')[2]
+        value: str = msg.payload.decode('utf-8')
+
+        server.write_registers(register_name, value)
+
+
+        value = server.read_registers(server.write_parameters_slug_to_name[register_name])
+        logger.info(f"read {value=}")
+        self.publish_to_ha(
+            register_name, value, server)
 
     def publish_discovery_topics(self, server) -> None:
         while not self.is_connected():
