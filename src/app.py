@@ -1,13 +1,11 @@
-from abc import ABC, abstractmethod
 from time import sleep
 from datetime import datetime, timedelta
 import atexit
 import logging
 from queue import Queue
-from typing import final
 
 from .loader import load_validate_options
-from .options import AppOptions
+from .options import Options
 from .client import Client
 from .implemented_servers import ServerTypes
 from .server import Server
@@ -41,87 +39,38 @@ def exit_handler(
 
     mqtt_client.loop_stop()
 
-def message_handler(msg_topic: str, msg_payload_decoded: str, mqtt_client: MqttClient, servers: list[Server]) -> None:
-    """
-        Callback for writing appropriate device register when message received.
-    """
-    # command_topic = f"{self.base_topic}/{server.nickname}/{slugify(register_name)}/set"
-    server_ha_display_name: str = msg_topic.split('/')[1]
-    s = None
-    for s in servers: 
-        if s.name == server_ha_display_name:
-            server = s
-    if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
-    register_name: str = msg_topic.split('/')[2]
-    value: str = msg_payload_decoded 
 
-    server.write_registers(register_name, value)
-
-
-    value = server.read_registers(server.write_parameters_slug_to_name[register_name])
-    logger.info(f"read {value=}")
-    mqtt_client.publish_to_ha(
-        register_name, value, server)
-    
-class IDeviceInstantiatorCallbacks(ABC):
-    @staticmethod
-    @abstractmethod
-    def instantiate_clients(OPTIONS: AppOptions) -> list[Client]:
-        """ Callback function that creates a list of Client objects from OPTIONS.clients
-
-        Args:
-            OPTIONS (AppOptions): AppOptions dataclass containing client configuration
-
-        Returns:
-            list[Client]: list of Clients or spoofed Clients
-        """  
-
-    @staticmethod
-    @abstractmethod
-    def instantiate_servers(OPTIONS: AppOptions, clients: list[Client]) -> list[Server]:
-        """ Callback function that creates a list of Server objects from OPTIONS.servers
-
-        Args:
-            OPTIONS (AppOptions): AppOptions dataclass containing servers configuration
-            clients (list[Client]): list of Clients or spoofed Clients
-
-        Returns:
-            list[Server]: list of Servers
-        """
-        
-class RealDeviceInstantiator(IDeviceInstantiatorCallbacks):
-    @staticmethod
-    def instantiate_clients(OPTIONS: AppOptions) -> list[Client]:
-        return [Client(cl_options) for cl_options in OPTIONS.clients]
-
-    @staticmethod
-    def instantiate_servers(OPTIONS: AppOptions, clients: list[Client]) -> list[Server]:
-        return [
-            ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients)
-            for sr in OPTIONS.servers
-        ]
-    
 
 
 class App:
-    def __init__(self, device_instantiator: IDeviceInstantiatorCallbacks, options_rel_path=None) -> None:
+    def __init__(self, client_instantiator_callback, server_instantiator_callback, options_rel_path=None) -> None:
+        self.OPTIONS: Options
         # Read configuration
-        self.OPTIONS: AppOptions = load_validate_options(options_rel_path if options_rel_path else "/data/options.json")
+        if options_rel_path:
+            self.OPTIONS = load_validate_options(options_rel_path)
+        else:
+            self.OPTIONS = load_validate_options()
+
+        self.midnight_sleep_enabled, self.minutes_wakeup_after = self.OPTIONS.sleep_over_midnight, self.OPTIONS.sleep_midnight_minutes
+        self.pause_interval = self.OPTIONS.pause_interval_seconds
+        # midnight_sleep_enabled=True, minutes_wakeup_after=5
 
         # Setup callbacks
-        self.device_instantiator = device_instantiator
+        self.client_instantiator_callback = client_instantiator_callback
+        self.server_instantiator_callback = server_instantiator_callback
 
     def setup(self) -> None:
         self.sleep_if_midnight()
 
         logger.info("Instantiate clients")
-        self.clients = self.device_instantiator.instantiate_clients(self.OPTIONS)
+        self.clients = self.client_instantiator_callback(self.OPTIONS)
         logger.info(f"{len(self.clients)} clients set up")
 
         logger.info("Instantiate servers")
-        self.servers = self.device_instantiator.instantiate_servers(
+        self.servers = self.server_instantiator_callback(
             self.OPTIONS, self.clients)
         logger.info(f"{len(self.servers)} servers set up")
+        # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
 
     def connect(self) -> None:
         for client in self.clients:
@@ -132,6 +81,7 @@ class App:
 
         # Setup MQTT Client
         self.mqtt_client = MqttClient(self.OPTIONS)
+        self.mqtt_client.servers = self.servers
         succeed: MQTTErrorCode = self.mqtt_client.connect(
             host=self.OPTIONS.mqtt_host, port=self.OPTIONS.mqtt_port
         )
@@ -158,11 +108,11 @@ class App:
         # every read_interval seconds, read the registers and publish to mqtt
         while True:
             for server in self.servers:
-                for write_register_name, _ in server.write_parameters.items():
+                for register_name, details in server.write_parameters.items():
                     sleep(READ_INTERVAL)
-                    value = server.read_registers(write_register_name)
+                    value = server.read_registers(register_name)
                     self.mqtt_client.publish_to_ha(
-                        write_register_name, value, server)
+                        register_name, value, server)
                 logger.info(
                     f"Published all Write parameter values for {server.name=}")
                 for register_name, details in server.parameters.items():
@@ -172,11 +122,16 @@ class App:
                         register_name, value, server)
                 logger.info(
                     f"Published all Read parameter values for {server.name=}")
-            if loop_once:   # for debug/ testing
+            logger.info("")
+            
+            # if not RECV_Q.empty():
+            #     message_handler(RECV_Q, self.servers)
+
+            if loop_once:
                 break
 
-            logger.info(f"Blocking for {self.OPTIONS.pause_interval_seconds}s")
-            sleep(self.OPTIONS.pause_interval_seconds)
+            # publish availability
+            sleep(self.pause_interval)
 
             self.sleep_if_midnight()
 
@@ -185,10 +140,10 @@ class App:
         Sleeps if the current time is within 3 minutes before or 5 minutes after midnight.
         Uses efficient sleep intervals instead of busy waiting.
         """
-        while self.OPTIONS.midnight_sleep_enabled:
+        while self.midnight_sleep_enabled:
             current_time = datetime.now()
             is_before_midnight = current_time.hour == 23 and current_time.minute >= 57
-            is_after_midnight = current_time.hour == 0 and current_time.minute < self.OPTIONS.midnight_sleep_wakeup_after
+            is_after_midnight = current_time.hour == 0 and current_time.minute < self.minutes_wakeup_after
 
             if not (is_before_midnight or is_after_midnight):
                 break
@@ -202,7 +157,7 @@ class App:
             else:
                 # Calculate time until 5 minutes after midnight
                 next_check = current_time.replace(
-                    hour=0, minute=self.OPTIONS.midnight_sleep_wakeup_after, second=0, microsecond=0)
+                    hour=0, minute=self.minutes_wakeup_after, second=0, microsecond=0)
 
             # Sleep until next check, but no longer than 30 seconds at a time
             sleep_duration = min(
@@ -210,30 +165,38 @@ class App:
             sleep(sleep_duration)
 
 
+def instantiate_clients(OPTIONS: Options) -> list[Client]:
+    return [Client(cl_options) for cl_options in OPTIONS.clients]
 
+
+def instantiate_servers(OPTIONS: Options, clients: list[Client]) -> list[Server]:
+    return [
+        ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients)
+        for sr in OPTIONS.servers
+    ]
 
 
 if __name__ == "__main__":
     if len(sys.argv) <= 1:  # deployed on homeassistant
-        device_instantiator = RealDeviceInstantiator()
-        app = App(device_instantiator=device_instantiator)
+        app = App(instantiate_clients, instantiate_servers)
         app.setup()
         app.connect()
         app.loop()
     else:                   # running locally
         from .client import SpoofClient
-
-        @final
-        class SpoofDeviceInstantiator(RealDeviceInstantiator):
-            @staticmethod
-            def instantiate_clients(Options) -> list[SpoofClient]:
-                    return [SpoofClient()]
-
-        device_instantiator = SpoofDeviceInstantiator()
-        app = App(device_instantiator, sys.argv[1])
+        app = App(instantiate_clients, instantiate_servers, sys.argv[1])
         app.OPTIONS.mqtt_host = "localhost"
         app.OPTIONS.mqtt_port = 1884
         app.OPTIONS.pause_interval_seconds = 10
+
+        def instantiate_spoof_clients(Options) -> list[SpoofClient]:
+            return [SpoofClient()]
+
+        app = App(
+            client_instantiator_callback=instantiate_spoof_clients,
+            server_instantiator_callback=instantiate_servers,
+            options_rel_path="config.yaml"
+        )
 
         app.setup()
         for s in app.servers:

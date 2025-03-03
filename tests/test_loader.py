@@ -27,14 +27,14 @@ class TestLoaders(unittest.TestCase):
         """
         TODO Maybe not reading the specified path.."""
         self.assertIsInstance(load_options(
-            json_rel_path=self.yaml_path), AppOptions)
+            json_rel_path=self.yaml_path), Options)
 
     # Load and Validate
     def test_load_validate(self):
         """
         Test passing of arguments from options to validaters. """
         self.assertIsInstance(load_validate_options(
-            json_rel_path=self.yaml_path), AppOptions)
+            json_rel_path=self.yaml_path), Options)
 
     # Implemented Server Validator
     def test_validate_server_implemented(self):
