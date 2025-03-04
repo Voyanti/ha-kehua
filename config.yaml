@@ -1,5 +1,5 @@
 name: "Atess Inverter"
-version: "0.4.10"
+version: "0.4.9"
 slug: "atess"
 description: "Atess Inverter"
 init: false
