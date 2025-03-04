@@ -73,11 +73,12 @@ class App:
         # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
 
     def connect(self) -> None:
-        for client in self.clients:
-            client.connect()
+        # for client in self.clients:
+        #     client.connect()
 
         for server in self.servers:
-            server.connect()
+            server.setup_valid_registers_for_model()
+            # server.connect()
 
         # Setup MQTT Client
         self.mqtt_client = MqttClient(self.OPTIONS)
