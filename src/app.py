@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-READ_INTERVAL = 0.001
+READ_INTERVAL = 0.004
 
 
 def exit_handler(
@@ -147,6 +147,7 @@ class App:
 
             if not (is_before_midnight or is_after_midnight):
                 break
+            logger.info(f"Sleeping over midnight")
 
             # Calculate appropriate sleep duration
             if is_before_midnight:
