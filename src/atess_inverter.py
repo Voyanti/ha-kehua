@@ -19,6 +19,9 @@ class AtessInverter(Server):
         self._serialnum = "unknown"
         self._parameters = atess_parameters
         self._write_parameters = {}
+        self._model = "PBD250"
+        if modbus_id == 1:
+            self._model = "PCS500"
 
     @property
     def manufacturer(self):
@@ -40,10 +43,10 @@ class AtessInverter(Server):
         return super().is_available(register_name)
         
     def read_model(self):
-        model = self.read_registers("Hardware Version")
-        logger.info(f"Read model as {model=}")
+        # model = self.read_registers("Hardware Version")
+        logger.info(f"HARDCODED model {self._model=}")
 
-        return model
+        return self._model
     
     def set_model(self):
         self.model = self.read_model()
