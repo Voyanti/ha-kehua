@@ -45,6 +45,11 @@ class AtessInverter(Server):
 
         return model
     
+    def set_model(self):
+        self.model = self.read_model()
+        logger.info(f"Model read as {self.model}")
+        # no verification TODO temp
+    
     def setup_valid_registers_for_model(self):
         if "PCS" in self.model:
             self._parameters.update(PCS_parameters)
