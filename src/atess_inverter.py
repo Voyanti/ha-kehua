@@ -54,6 +54,7 @@ class AtessInverter(Server):
         # no verification TODO temp
     
     def setup_valid_registers_for_model(self):
+        logger.info(f"{self.model}")
         if "PCS" in self.model:
             self._parameters.update(PCS_parameters)
             logger.info("Added PCS-Specific Registers.")
