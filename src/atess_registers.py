@@ -1,6 +1,6 @@
 from .enums import DataType, DeviceClass, Parameter, RegisterTypes
 
-not_PCS_parameters = {
+not_PCS_parameters: dict[str, Parameter]  = {
     # All except PCS
     "PV1 Voltage": {
         "addr": 0 + 1,
@@ -37,6 +37,17 @@ not_PCS_parameters = {
         "unit": "kWh",
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total_increasing"
+    },
+    "Total PV Generation" : {
+        "addr": 64 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total"
     },
 }
 atess_parameters: dict[str, Parameter] = {
@@ -45,7 +56,7 @@ atess_parameters: dict[str, Parameter] = {
     ###############################
     "Serial Number": {
         "addr": 180 + 1,
-        "count": 6,
+        "count": 5,
         "dtype": DataType.UTF8,
         "device_class": DeviceClass.ENUM,
         "multiplier": 1,
@@ -108,7 +119,7 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery Percentage": {
+    "Battery SOC": {
         "addr": 47 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -116,6 +127,7 @@ atess_parameters: dict[str, Parameter] = {
         "multiplier": 1,
         "unit": "%",
         "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "measurement"
     },
     # Output Voltages
     "Output Voltage U": {
@@ -270,7 +282,7 @@ atess_parameters: dict[str, Parameter] = {
 }
 
 
-PCS_parameters = {  # battery inverters
+PCS_parameters: dict[str, Parameter]  = {  # battery inverters
     "Battery Discharge Cutoff": {
         "addr": 47 + 1,
         "count": 1,
@@ -326,28 +338,28 @@ PCS_parameters = {  # battery inverters
         "unit": "%",
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },
-    "Charge Current Limit": {
-        "addr": 154 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "device_class": DeviceClass.CURRENT,
-        "multiplier": 0.1,
-        "unit": "A",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-        "min": 0,
-        "max": 10000,
-    },
-    "Discharge Current Limit": {
-        "addr": 155 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "device_class": DeviceClass.CURRENT,
-        "multiplier": 0.1,
-        "unit": "A",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-        "min": 0,
-        "max": 10000,
-    },
+    # "Charge Current Limit": {
+    #     "addr": 154 + 1,
+    #     "count": 1,
+    #     "dtype": DataType.U16,
+    #     "device_class": DeviceClass.CURRENT,
+    #     "multiplier": 0.1,
+    #     "unit": "A",
+    #     "register_type": RegisterTypes.HOLDING_REGISTER,
+    #     "min": 0,
+    #     "max": 10000,
+    # },
+    # "Discharge Current Limit": {
+    #     "addr": 155 + 1,
+    #     "count": 1,
+    #     "dtype": DataType.U16,
+    #     "device_class": DeviceClass.CURRENT,
+    #     "multiplier": 0.1,
+    #     "unit": "A",
+    #     "register_type": RegisterTypes.HOLDING_REGISTER,
+    #     "min": 0,
+    #     "max": 10000,
+    # },
     "Charge Cutoff SOC": {
         "addr": 178 + 1,
         "count": 1,
@@ -356,8 +368,8 @@ PCS_parameters = {  # battery inverters
         "multiplier": 1,
         "unit": "%",
         "register_type": RegisterTypes.HOLDING_REGISTER,
-        "min": 0,
-        "max": 100,
+        # "min": 0,
+        # "max": 100,
     },
     # PCS
     "Output Voltage UV": {
@@ -631,9 +643,41 @@ PCS_parameters = {  # battery inverters
         "device_class": DeviceClass.VOLTAGE,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
+    "Total Grid Import" : {
+        "addr": 90 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total"
+    },
+    "Total Grid Export" : {
+        "addr": 96 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total"
+    },
+    "Total Load Energy": {
+        "addr": 84 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total"
+    }
 }
+# TODO bypass p 37 atess-modbus-rtu-protocol-v37.pdf
 
-PBD_parameters = {
+PBD_parameters: dict[str, Parameter]  = {
+    
     # PBD
     "PV2 Voltage": {
         "addr": 105 + 1,

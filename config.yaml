@@ -1,5 +1,5 @@
 name: "Atess Inverter"
-version: "0.4.6"
+version: "0.4.7"
 slug: "atess"
 description: "Atess Inverter"
 init: false
@@ -16,17 +16,30 @@ arch:
   - i386
 options:
   servers:
-    - name: "A1"
-      serialnum: "A2340700442"
-      server_type: "ATESS_INVERTER"
-      connected_client: "Client1"
+    - name: AtessPCS
+      serialnum: USD0B4502B
+      server_type: ATESS_INVERTER
+      connected_client: client1
       modbus_id: 1
+    - name: AtessPBD1
+      serialnum: UMD0C37086
+      server_type: ATESS_INVERTER
+      connected_client: client1
+      modbus_id: 2
+    - name: AtessPBD2
+      serialnum: UMD0C2806D
+      server_type: ATESS_INVERTER
+      connected_client: client1
+      modbus_id: 3
   clients:
-    - name: "Client1"
-      type: "TCP"
-      host: "10.0.0.15"
-      port: 502
-  pause_interval_seconds: 0.5
+    - name: client1
+      type: RTU
+      port: /dev/ttyACM0
+      baudrate: 9600
+      bytesize: 8
+      parity: false
+      stopbits: 2
+  pause_interval_seconds: 1
   sleep_over_midnight: true
   sleep_midnight_minutes: 10
   mqtt_host: "localhost"
@@ -35,8 +48,8 @@ options:
   # mqtt_port: 1883
   mqtt_user: "mqtt"
   mqtt_password: "mqtt"
-  mwtt_ha_discovery_topic: "homeassistant"
-  mqtt_base_topic: "modbus"
+  mwtt_ha_discovery_topic: homeassistant
+  mqtt_base_topic: modbus
 schema:
   servers:
     - name: str

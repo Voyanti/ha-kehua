@@ -40,7 +40,26 @@ class AtessInverter(Server):
         return self._write_parameters
     
     def is_available(self, register_name="Device On/Off"):
+        # self.verify_serialnum()
         return super().is_available(register_name)
+    
+    def verify_serialnum(self, serialnum_name_in_definition:str="Serial Number") -> bool:
+        """ Verify that the serialnum specified in config.yaml matches 
+        with the num in the regsiter as defined in implementation of Server
+
+        Arguments:
+        ----------
+            - serialnum_name_in_definition: str: Name of the register in server.registers containing the serial number
+        """
+        logger.info("Verifying serialnumber")
+        serialnum = self.read_registers(serialnum_name_in_definition)                                                
+
+        if serialnum is None: 
+            logger.info(f"Server with serial {self.serial} not available")
+            return False
+        elif self.serial != serialnum: raise ValueError(f"Mismatch in configured serialnum {self.serial} \
+                                                                        and actual serialnum {serialnum} for server {self.name}.")
+        return True
         
     def read_model(self):
         # model = self.read_registers("Hardware Version")
@@ -71,13 +90,20 @@ class AtessInverter(Server):
             """ Unsigned 16-bit big-endian to int """
             return registers[0]
         
+        def _decode_u32(registers):
+            """ Unsigned 32-bit big-endian to int """
+            low = registers[1]
+            high = registers[0]
+            packed = struct.pack('>HH', high, low)
+            return struct.unpack('>I', packed)[0]
+        
         def _decode_s16(registers):
             """ Signed 16-bit big-endian to int """
             sign = 0xFFFF if registers[0] & 0x1000 else 0
             packed = struct.pack('>HH', sign, registers[0])
             return struct.unpack('>i', packed)[0]
         
-        def _decode_utf8(registers):
+        def _decode_utf8(registers): # TODO
             """ Two ASCII chars per 16-bit register """
             
             packed = struct.pack('>H', registers[0])
@@ -85,6 +111,7 @@ class AtessInverter(Server):
 
         if dtype == DataType.U16: return _decode_u16(registers)
         elif dtype == DataType.I16: return _decode_s16(registers)
+        elif dtype == DataType.U32: return _decode_u32(registers)
         elif dtype == DataType.UTF8: return _decode_utf8(registers)
         else: raise NotImplementedError(f"Data type {dtype} decoding not implemented")
 
