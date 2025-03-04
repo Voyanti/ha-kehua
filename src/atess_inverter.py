@@ -35,6 +35,9 @@ class AtessInverter(Server):
     @property
     def write_parameters(self):
         return self._write_parameters
+    
+    def is_available(self, register_name="Device On/Off"):
+        return super().is_available(register_name)
         
     def read_model(self):
         model = self.read_registers("Hardware Version")
