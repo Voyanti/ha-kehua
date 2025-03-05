@@ -3,7 +3,7 @@ from .server import Server
 import struct
 import logging
 from .enums import DataType
-from .atess_registers import atess_parameters, PBD_parameters, PCS_parameters, not_PCS_parameters
+from .atess_registers import atess_parameters, PBD_parameters, PCS_parameters, not_PCS_parameters, model_code_to_name
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +19,9 @@ class AtessInverter(Server):
         self._serialnum = "unknown"
         self._parameters = atess_parameters
         self._write_parameters = {}
-        self._model = "PBD250"
-        if modbus_id == 1:
-            self._model = "PCS500"
+        # self._model = "PBD250"
+        # if modbus_id == 1:
+        #     self._model = "PCS500"
 
     @property
     def manufacturer(self):
@@ -62,15 +62,13 @@ class AtessInverter(Server):
         return True
         
     def read_model(self):
-        # model = self.read_registers("Hardware Version")
-        logger.info(f"HARDCODED model {self._model=}")
+        model_code = self.read_registers("Device Type Code")
 
-        return self._model
-    
-    def set_model(self):
-        self.model = self.read_model()
-        logger.info(f"Model read as {self.model}")
-        # no verification TODO temp
+        model_name = model_code_to_name.get(model_code)
+        if not model_name: 
+            raise ValueError(f"Device Type Code read {model_code=} not in mappiong to string")
+
+        return model_name
     
     def setup_valid_registers_for_model(self):
         logger.info(f"{self.model}")
