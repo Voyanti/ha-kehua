@@ -83,7 +83,7 @@ atess_parameters: dict[str, Parameter] = {
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },
     # Voltage and Current Measurements
-    "PV Voltage": {
+    "PV Voltage": { # 0 on PCS
         "addr": 80 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -92,15 +92,15 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.VOLTAGE,
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },
-    "Battery Voltage": {
-        "addr": 81 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "V",
-        "device_class": DeviceClass.VOLTAGE,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
+    # "Battery Voltage": {
+    #     "addr": 81 + 1,
+    #     "count": 1,
+    #     "dtype": DataType.U16,
+    #     "multiplier": 0.1,
+    #     "unit": "V",
+    #     "device_class": DeviceClass.VOLTAGE,
+    #     "register_type": RegisterTypes.HOLDING_REGISTER,
+    # },
     "Battery Current": {
         "addr": 82 + 1,
         "count": 1,
@@ -110,7 +110,7 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },
-    "PV Current": {
+    "PV Current": { # constant on PCS500
         "addr": 83 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -119,7 +119,7 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },
-    "Battery Power": {
+    "Battery Power": { # checked
         "addr": 17 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -128,7 +128,7 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery SOC": {
+    "Battery SOC": { # checked
         "addr": 47 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -159,62 +159,6 @@ atess_parameters: dict[str, Parameter] = {
     },
     "Output Voltage W": {
         "addr": 86 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "V",
-        "device_class": DeviceClass.VOLTAGE,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    # Grid Currents
-    "Grid Current U": {
-        "addr": 87 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "A",
-        "device_class": DeviceClass.CURRENT,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    "Grid Current V": {
-        "addr": 88 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "A",
-        "device_class": DeviceClass.CURRENT,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    "Grid Current W": {
-        "addr": 89 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "A",
-        "device_class": DeviceClass.CURRENT,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    # Grid Voltages
-    "Grid Voltage UV": {
-        "addr": 90 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "V",
-        "device_class": DeviceClass.VOLTAGE,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    "Grid Voltage VW": {
-        "addr": 91 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "V",
-        "device_class": DeviceClass.VOLTAGE,
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    "Grid Voltage WU": {
-        "addr": 92 + 1,
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
@@ -260,7 +204,7 @@ atess_parameters: dict[str, Parameter] = {
         "unit": "",
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery Voltage": {
+    "Battery Voltage": { # checked
         "addr": 1 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -269,22 +213,13 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.VOLTAGE,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery Current": {
+    "Battery Current": { # checked
         "addr": 2 + 1,
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
         "unit": "A",
         "device_class": DeviceClass.CURRENT,
-        "register_type": RegisterTypes.INPUT_REGISTER,
-    },
-    "Battery Power": {
-        "addr": 17 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "multiplier": 0.1,
-        "unit": "kW",
-        "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
     ###############################
@@ -435,6 +370,36 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
+
+    "Grid Bypass Voltage UV": {
+        "addr": 13 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "V",
+        "device_class": DeviceClass.VOLTAGE,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Grid Bypass Voltage VW": {
+        "addr": 14 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "V",
+        "device_class": DeviceClass.VOLTAGE,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Grid Bypass Voltage WU": {
+        "addr": 15 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "V",
+        "device_class": DeviceClass.VOLTAGE,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+
+
     "Output Frequency": {
         "addr": 16 + 1,
         "count": 1,
@@ -444,7 +409,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.FREQUENCY,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Bypass Apparent Power": {
+    "Bypass Apparent Power": { # fout
         "addr": 18 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -453,7 +418,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Bypass Active Power": {
+    "Bypass Active Power": { # fout
         "addr": 19 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -462,7 +427,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Bypass Reactive Power": {
+    "Bypass Reactive Power": { # fout
         "addr": 20 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -507,7 +472,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Daily Power Consumption": {
+    "Daily Power Consumption": { # fout
         "addr": 82 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -516,7 +481,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Daily Power From Grid": {
+    "Daily Power From Grid": { # checked
         "addr": 88 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -525,7 +490,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Daily Power To Grid": {
+    "Daily Power To Grid": { # checked
         "addr": 94 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -534,7 +499,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Output Current U": {
+    "Output Current U": { # checked TODO load vs output current
         "addr": 135 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -543,7 +508,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Output Current V": {
+    "Output Current V": { # checked
         "addr": 136 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -552,7 +517,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Output Current W": {
+    "Output Current W": { # checked
         "addr": 137 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -751,7 +716,7 @@ PBD_parameters: dict[str, Parameter]  = {
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "PV Module Temperature": {
+    "PV Module Temperature": { # 0 on PCS
         "addr": 114 + 1,
         "count": 1,
         "dtype": DataType.U16,
