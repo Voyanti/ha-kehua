@@ -17,11 +17,8 @@ class AtessInverter(Server):
         self._manufacturer = "Atess"
         self._supported_models = ('PCS150', 'PCS500', 'PBD250') 
         self._serialnum = "unknown"
-        self._parameters = atess_parameters
+        self._parameters = dict.copy(atess_parameters)
         self._write_parameters = {}
-        # self._model = "PBD250"
-        # if modbus_id == 1:
-        #     self._model = "PCS500"
 
     @property
     def manufacturer(self):
