@@ -8,6 +8,10 @@ from .options import ModbusTCPOptions, ModbusRTUOptions
 from time import sleep
 logger = logging.getLogger(__name__)
 
+# Enable pymodbus logging
+# log = logging.getLogger("pymodbus")
+# log.setLevel(logging.DEBUG)
+
 
 class Client:
     """
@@ -39,6 +43,8 @@ class Client:
                                              stopbits=cl_options.stopbits)
 
     def read(self, address, count, slave_id, register_type):
+        logger.debug(f"Reading param from {address=}, {count=} on {slave_id=}, {register_type=}")
+
         if register_type == RegisterTypes.HOLDING_REGISTER:
             result = self.client.read_holding_registers(address=address-1,
                                                         count=count,
