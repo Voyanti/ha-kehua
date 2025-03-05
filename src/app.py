@@ -18,7 +18,7 @@ import sys
 logging.basicConfig(
     level=logging.INFO,  # Set logging level
     # Format with timestamp
-    format="%(asctime)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",  # Date format
 )
 logger = logging.getLogger(__name__)
