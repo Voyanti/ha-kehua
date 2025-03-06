@@ -39,7 +39,7 @@ not_PCS_parameters: dict[str, Parameter]  = {
         "register_type": RegisterTypes.INPUT_REGISTER,
         "state_class": "total_increasing"
     },
-    "Total PV Energy" : {
+    "Total PV Generation" : {
         "addr": 64 + 1,
         "count": 2,
         "dtype": DataType.U32,
