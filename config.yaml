@@ -68,7 +68,7 @@ schema:
       bytesize: int?
       parity: bool?
       stopbits: int?
-  pause_interval_seconds: int
+  pause_interval_seconds: float
   sleep_over_midnight: bool
   sleep_midnight_minutes: int
   mqtt_host: str
