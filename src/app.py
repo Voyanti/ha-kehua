@@ -114,14 +114,14 @@ class App:
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
                 logger.info(
-                    f"Published all Write parameter values for {server.name=}")
+                    f"Published all Write parameter values for {server.name}")
                 for register_name, details in server.parameters.items():
                     sleep(READ_INTERVAL)
                     value = server.read_registers(register_name)
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
                 logger.info(
-                    f"Published all Read parameter values for {server.name=}")
+                    f"Published all Read parameter values for {server.name}")
             logger.info("")
             
             # if not RECV_Q.empty():

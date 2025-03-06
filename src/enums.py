@@ -18,6 +18,8 @@ class DataType(Enum):
     U64 = "U64"
 
     # Signed integers
+    I8L = "I8L"
+    I8H = "I8H"
     I16 = "I16"
     I32 = "I32"
     I64 = "I64"
@@ -52,6 +54,8 @@ class DataType(Enum):
     def min_value(self) -> Optional[int]:
         """Returns the minimum value for numeric types."""
         ranges = {
+            DataType.I8L: -128,  # -2^7
+            DataType.I8H: -128,  # -2^7
             DataType.U16: 0,
             DataType.U32: 0,
             DataType.I16: -32768,  # -2^15
@@ -66,6 +70,8 @@ class DataType(Enum):
     def max_value(self) -> Optional[int]:
         """Returns the maximum value for numeric types."""
         ranges = {
+            DataType.I8L: 127,  # 2^7-1
+            DataType.I8H: 127,  # 2^7-1
             DataType.U16: 65535,  # 2^16 - 1
             DataType.U32: 4294967295,  # 2^32 - 1
             DataType.I16: 32767,  # 2^15 - 1
