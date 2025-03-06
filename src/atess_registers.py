@@ -195,10 +195,48 @@ atess_parameters: dict[str, Parameter] = {
         "device_class": DeviceClass.VOLTAGE,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
+    "Total Battery Discharge Energy": { # checked
+        "addr": 68 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total_increasing",
+    },
+    "Total Battery Charge Energy": { # checked
+        "addr": 72 + 1,
+        "count": 2,
+        "dtype": DataType.U32,
+        "multiplier": 0.1,
+        "unit": "kWh",
+        "device_class": DeviceClass.ENERGY,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "total_increasing",
+    },
 }
 
 
 PCS_parameters: dict[str, Parameter]  = {  # battery inverters
+    "System battery current": {
+        "addr": 162 + 1,
+        "count": 1,
+        "dtype": DataType.I16,
+        "device_class": DeviceClass.CURRENT,
+        "multiplier": 0.1,
+        "unit": "A",
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "System battery power": {
+        "addr": 228 + 1,
+        "count": 1,
+        "dtype": DataType.I16,
+        "device_class": DeviceClass.POWER,
+        "multiplier": 0.1,
+        "unit": "kW",
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
     "Transformer temperature": {
         "addr": 35 + 1,
         "count": 1,
@@ -344,6 +382,33 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
     },
     "Bypass Current W": {
         "addr": 9 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "A",
+        "device_class": DeviceClass.CURRENT,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Inductance Current A": {
+        "addr": 10 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "A",
+        "device_class": DeviceClass.CURRENT,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Inductance Current B": {
+        "addr": 11 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 0.1,
+        "unit": "A",
+        "device_class": DeviceClass.CURRENT,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Inductance Current C": {
+        "addr": 12 + 1,
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
@@ -554,7 +619,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.POWER_FACTOR,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current A": {
+    "Load Current A": { # load current u on inverter disp
         "addr": 53 + 1,
         "count": 1,
         "dtype": DataType.I16,
@@ -563,7 +628,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current B": {
+    "Load Current B": {# load current v on inverter disp
         "addr": 54 + 1,
         "count": 1,
         "dtype": DataType.I16,
@@ -572,7 +637,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current C": {
+    "Load Current C": {# load current w on inverter disp
         "addr": 55 + 1,
         "count": 1,
         "dtype": DataType.I16,
