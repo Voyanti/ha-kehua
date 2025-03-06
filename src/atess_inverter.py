@@ -92,11 +92,9 @@ class AtessInverter(Server):
             packed = struct.pack('>HH', high, low)
             return struct.unpack('>I', packed)[0]
         
-        def _decode_s16(registers):
+        def _decode_i16(registers):
             """ Signed 16-bit big-endian to int """
-            sign = 0xFFFF if registers[0] & 0x1000 else 0
-            packed = struct.pack('>HH', sign, registers[0])
-            return struct.unpack('>i', packed)[0]
+            return struct.unpack('>h', struct.pack('>H', registers[0]))[0]
         
         def _decode_utf8(registers): # TODO
             """ Two ASCII chars per 16-bit register """
@@ -105,7 +103,7 @@ class AtessInverter(Server):
             return packed.decode("utf-8")       
 
         if dtype == DataType.U16: return _decode_u16(registers)
-        elif dtype == DataType.I16: return _decode_s16(registers)
+        elif dtype == DataType.I16: return _decode_i16(registers)
         elif dtype == DataType.U32: return _decode_u32(registers)
         elif dtype == DataType.UTF8: return _decode_utf8(registers)
         else: raise NotImplementedError(f"Data type {dtype} decoding not implemented")
@@ -116,3 +114,5 @@ class AtessInverter(Server):
 if __name__ == "__main__":
     inv = AtessInverter("", "", "", "")
     print(inv._decoded([0x6154], DataType.UTF8))# aT = 0x61, 0x54
+    print(inv._decoded([2**16-1], DataType.I16))
+    print(inv._decoded([1], DataType.I16))
