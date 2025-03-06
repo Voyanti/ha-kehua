@@ -189,7 +189,7 @@ class Server(ABC):
             val *= multiplier
         if device_class is not None and isinstance(val, int) or isinstance(val, float):
             val = round(
-                val, device_class_to_rounding.get(device_class, 2))
+                val, device_class_to_rounding.get(device_class, 2)) # type: ignore
         logger.debug(f"Decoded Value = {val} {unit}")
 
         return val
