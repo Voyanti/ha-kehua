@@ -47,7 +47,7 @@ not_PCS_parameters: dict[str, Parameter]  = {
         "unit": "kWh",
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
-        "state_class": "total"
+        "state_class": "total_increasing"
     },
 }
 atess_parameters: dict[str, Parameter] = {
