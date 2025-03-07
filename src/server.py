@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional, TypedDict
 
 from .helpers import slugify
-from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter
+from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter, WriteSelectParameter
 from .client import Client
 from .options import ServerOptions
 
@@ -194,7 +194,7 @@ class Server(ABC):
 
         return val
     
-    def write_registers(self, parameter_name_slug: str, value: Any, modbus_id_override: Optional[int]=None) -> None:
+    def write_registers(self, parameter_name: str, value: Any, modbus_id_override: Optional[int]=None) -> None:
         """ 
         Write a group of registers (parameter) using pymodbus
 
@@ -202,8 +202,7 @@ class Server(ABC):
 
         Finds correct write register name using mapping from Server.write_registers_slug_to_name
         """
-        parameter_name = self.write_parameters_slug_to_name[parameter_name_slug]
-        param: WriteParameter = self.write_parameters[parameter_name]
+        param: WriteParameter | WriteSelectParameter = self.write_parameters[parameter_name]
 
         address = param["addr"]
         dtype = param["dtype"]
@@ -214,7 +213,6 @@ class Server(ABC):
         else:
             modbus_id = self.modbus_id
         register_type = param["register_type"]
-        unit = param["unit"]
 
         if param["ha_entity_type"] == HAEntityType.SWITCH:
             value = int(value, base=0) # interpret string as integer literal. supports auto detecting base
@@ -234,6 +232,7 @@ class Server(ABC):
         #     self.connected_client._handle_error_response(result)
         #     raise Exception(f"Error writing register {parameter_name}")
 
+        # unit = param["unit"]
         # logger.info(f"Wrote {value=} {unit=} as {values=} to {parameter_name}.")
 
     def connect(self):
