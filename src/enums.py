@@ -140,7 +140,10 @@ class DeviceClass(Enum):
 class HAEntityType(Enum):
     NUMBER = 'number'
     SWITCH = 'switch'
+    SELECT = 'select'
+
     SENSOR = 'sensor'
+    BINARY_SENSOR = 'binary_sensor'
 
 # all parameters are required to have these fields
 ParameterReq = TypedDict(
@@ -174,13 +177,27 @@ WriteParameterReq = TypedDict(
     },
 )
 
+class WriteSelectParameterReq(WriteParameterReq, total=True):
+    # select
+    options: list[str] # required for select
+
+class WriteSelectParameter(WriteSelectParameterReq, total=False):
+    value_template: str
+    command_template: str
+    
 class WriteParameter(WriteParameterReq, total=False):
+    device_class: DeviceClass # when not specified w=for a switch, a none type switch is used
+
+    # number
     unit: str
-    device_class: DeviceClass
-    min: float
+    min: float  
     max: float
+
+    # switch
     payload_off: int
     payload_on: int
+
+    
 
 if __name__ == "__main__":
     print(DataType.U16.min_value)
