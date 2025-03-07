@@ -228,13 +228,13 @@ class Server(ABC):
         logger.info(
             f"Writing {values} to param {parameter_name} ({register_type}) of {dtype=} from {address=}, {multiplier=}, {count=}, {modbus_id=}")
 
-        result = self.connected_client.write(values, address, modbus_id, register_type)
+        # result = self.connected_client.write(values, address, modbus_id, register_type)
 
-        if result.isError():
-            self.connected_client._handle_error_response(result)
-            raise Exception(f"Error writing register {parameter_name}")
+        # if result.isError():
+        #     self.connected_client._handle_error_response(result)
+        #     raise Exception(f"Error writing register {parameter_name}")
 
-        logger.info(f"Wrote {value=} {unit=} as {values=} to {parameter_name}.")
+        # logger.info(f"Wrote {value=} {unit=} as {values=} to {parameter_name}.")
 
     def connect(self):
         if not self.is_available():

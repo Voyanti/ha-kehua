@@ -10,6 +10,8 @@ from random import getrandbits
 from time import time, sleep
 from queue import Queue
 
+from .enums import HAEntityType
+
 logger = logging.getLogger(__name__)
 # RECV_Q: Queue = Queue()
 
@@ -52,7 +54,7 @@ class MqttClient(mqtt.Client):
         self.on_disconnect = on_disconnect
         self.on_message = on_message
 
-    def message_handler(self, msg):
+    def message_handler(self, msg) -> None:
         """
             Writes appropriate server registers for each message in mqtt receive queue
         """
@@ -63,16 +65,18 @@ class MqttClient(mqtt.Client):
             if s.name == server_ha_display_name:
                 server = s
         if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
-        register_name: str = msg.topic.split('/')[2]
+        register_slug: str = msg.topic.split('/')[2]
         value: str = msg.payload.decode('utf-8')
+        register_name = server.write_parameters_slug_to_name[register_slug]
 
-        server.write_registers(register_name, value)
+
+        server.write_registers(register_slug, value)
 
 
-        value = server.read_registers(server.write_parameters_slug_to_name[register_name])
+        value = server.read_registers(server.write_parameters_slug_to_name[register_slug])
         logger.info(f"read {value=}")
         self.publish_to_ha(
-            register_name, value, server)
+            register_slug, value, server)
 
     def publish_discovery_topics(self, server) -> None:
         while not self.is_connected():
@@ -132,11 +136,12 @@ class MqttClient(mqtt.Client):
                 # optional
                 "name": register_name,
                 "unique_id": f"{nickname}_{slugify(register_name)}",
-                "unit_of_measurement": details["unit"],
+                # "unit_of_measurement": details["unit"],
                 "availability_topic": availability_topic,
                 "device": device
             }
-
+            if details.get("unit") is not None:
+                discovery_payload.update(unit_of_measurement=details["unit"])
             if details.get("min") is not None and details.get("max") is not None:
                 discovery_payload.update(min=details["min"], max=details["max"])
             if details.get("payload_off") is not None and details.get("payload_on") is not None:
