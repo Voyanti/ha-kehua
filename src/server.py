@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional, TypedDict
 
 from .helpers import slugify
-from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter, WriteSelectParameter
+from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter
 from .client import Client
 from .options import ServerOptions
 
@@ -167,7 +167,7 @@ class Server(ABC):
         multiplier = param["multiplier"]
         # count = param.get('count', dtype.size // 2) #TODO
         count = param["count"]  # TODO
-        unit = param["unit"]
+        # unit = param["unit"]
         device_class = param.get("device_class")
         modbus_id = self.modbus_id
         register_type = param["register_type"]
@@ -190,11 +190,11 @@ class Server(ABC):
         if device_class is not None and isinstance(val, int) or isinstance(val, float):
             val = round(
                 val, device_class_to_rounding.get(device_class, 2)) # type: ignore
-        logger.debug(f"Decoded Value = {val} {unit}")
+        # logger.debug(f"Decoded Value = {val} {unit}")
 
         return val
     
-    def write_registers(self, parameter_name: str, value: Any, modbus_id_override: Optional[int]=None) -> None:
+    def write_registers(self, parameter_name_slug: str, value: Any, modbus_id_override: Optional[int]=None) -> None:
         """ 
         Write a group of registers (parameter) using pymodbus
 
@@ -202,7 +202,8 @@ class Server(ABC):
 
         Finds correct write register name using mapping from Server.write_registers_slug_to_name
         """
-        param: WriteParameter | WriteSelectParameter = self.write_parameters[parameter_name]
+        parameter_name = self.write_parameters_slug_to_name[parameter_name_slug]
+        param: WriteParameter = self.write_parameters[parameter_name]
 
         address = param["addr"]
         dtype = param["dtype"]
@@ -226,14 +227,16 @@ class Server(ABC):
         logger.info(
             f"Writing {values} to param {parameter_name} ({register_type}) of {dtype=} from {address=}, {multiplier=}, {count=}, {modbus_id=}")
 
-        # result = self.connected_client.write(values, address, modbus_id, register_type)
+        result = self.connected_client.write(values, address, modbus_id, register_type)
 
-        # if result.isError():
-        #     self.connected_client._handle_error_response(result)
-        #     raise Exception(f"Error writing register {parameter_name}")
+        if result.isError():
+            self.connected_client._handle_error_response(result)
+            raise Exception(f"Error writing register {parameter_name}")
 
-        # unit = param["unit"]
-        # logger.info(f"Wrote {value=} {unit=} as {values=} to {parameter_name}.")
+        if param.get("unit") is not None:
+            logger.info(f"Wrote {value=} unit={param.get('unit')} as {values=} to {parameter_name}.")
+        else:
+            logger.info(f"Wrote {value=} as {values=} to {parameter_name}.")
 
     def connect(self):
         if not self.is_available():

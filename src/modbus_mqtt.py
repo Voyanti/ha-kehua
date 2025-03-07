@@ -142,6 +142,12 @@ class MqttClient(mqtt.Client):
             }
             if details.get("unit") is not None:
                 discovery_payload.update(unit_of_measurement=details["unit"])
+            if details.get("options") is not None:
+                discovery_payload.update(options=details["options"])
+                if details.get("value_template") is not None:
+                    discovery_payload.update(value_template=details["value_template"])
+                if details.get("command_template") is not None:
+                    discovery_payload.update(command_template=details["command_template"])
             if details.get("min") is not None and details.get("max") is not None:
                 discovery_payload.update(min=details["min"], max=details["max"])
             if details.get("payload_off") is not None and details.get("payload_on") is not None:
