@@ -127,8 +127,20 @@ class AtessInverter(Server):
         elif dtype == DataType.UTF8: return _decode_utf8(registers)
         else: raise NotImplementedError(f"Data type {dtype} decoding not implemented")
 
-    def _encoded(cls, value):
-        raise NotImplementedError()
+    def _encoded(cls, value, dtype):
+        def _encode_u16(value):
+            """ Unsigned 16-bit big-endian to int """
+            U16_MAX = 2**16-1
+
+            if value > U16_MAX: raise ValueError(f"Cannot write {value=} to U16 register.")
+            elif value < 0:     raise ValueError(f"Cannot write negative {value=} to U16 register.")
+
+            if isinstance(value, float):
+                value = int(value)
+                
+            return [value]
+
+        if dtype==DataType.U16: return _encode_u16(value)
    
 if __name__ == "__main__":
     inv = AtessInverter("", "", "", "")

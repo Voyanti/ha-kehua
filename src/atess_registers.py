@@ -246,7 +246,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "unit": "°C",
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery Discharge Cutoff": {
+    "Battery Discharge Cutoff": { # 
         "addr": 47 + 1,
         "count": 1,
         "dtype": DataType.U16,
@@ -281,25 +281,6 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "unit": "",
         "device_class": DeviceClass.ENUM,
         "register_type": RegisterTypes.INPUT_REGISTER,
-    },
-    # Battery. NOTE Actually all types have this holding register
-    "SOC Up Limit": {
-        "addr": 66 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "device_class": DeviceClass.BATTERY,
-        "multiplier": 1,
-        "unit": "%",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
-    "SOC Down Limit": {
-        "addr": 67 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "device_class": DeviceClass.BATTERY,
-        "multiplier": 1,
-        "unit": "%",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
     },
     # "Charge Current Limit": {
     #     "addr": 154 + 1,
@@ -925,7 +906,7 @@ model_code_to_name: dict[int, str] = {
 }
 
 atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
-    "Mode selection": WriteSelectParameter(
+    "Mode selection": WriteSelectParameter( # ALL
         addr = 26 + 1,
         count = 1,
         dtype = DataType.U16,
@@ -935,7 +916,173 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
         options=["Load First", "Battery First", "Economy Mode", "Peak Shaving", "Time Schedule", "Manual Dispatch", "Battery Protect", "Backup Power Management", "Constant Power Discharge", "Forced Charging", "Smart Meter Mode", "Bat-Smart Meter"],
         value_template = "{% set options = [\"Load First\", \"Battery First\", \"Economy Mode\", \"Peak Shaving\", \"Time Schedule\", \"Manual Dispatch\", \"Battery Protect\", \"Backup Power Management\", \"Constant Power Discharge\", \"Forced Charging\", \"Smart Meter Mode\", \"Bat-Smart Meter\"] %}{% if value|int >= 0 and value|int < options|length %}{{ options[value|int] }}{% else %}{{ value }}{% endif %}",
         command_template = "{% set options = [\"Load First\", \"Battery First\", \"Economy Mode\", \"Peak Shaving\", \"Time Schedule\", \"Manual Dispatch\", \"Battery Protect\", \"Backup Power Management\", \"Constant Power Discharge\", \"Forced Charging\", \"Smart Meter Mode\", \"Bat-Smart Meter\"] %}{% if value in options %}{{ options.index(value) }}{% else %}{{ value }}{% endif %}"
-    )
+    ),
+    "Bypass Cabinet Enable": WriteParameter( # PCS
+        addr = 13 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SWITCH,
+        payload_off = 0,
+        payload_on = 1,
+    ),
+
+    # Battery. NOTE Actually all types have this holding register
+    "SOC Up Limit": WriteParameter( # ALL
+        addr = 66 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "%",
+    ), 
+    "SOC Down Limit": WriteParameter( # ALL
+        addr = 67 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "%",
+    ), 
+
+    "Charge Cutoff SOC": WriteParameter( # ALL
+        addr = 178 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "%",
+    ), 
+    "Discharge Cutoff SOC": WriteParameter( # ALL
+        addr = 47 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "%",
+    ), 
+    "Grid Charge Cutoff SOC": WriteParameter( # ALL
+        addr = 340 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "%",
+    ), 
+    "Battery Power Export to Grid Set": WriteParameter( # ALL
+        addr = 174 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 150,
+        unit = "kW",
+    ), 
+
+    "Grid And PV Charge Together": WriteParameter( # ALL
+        addr = 8 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SWITCH,
+        payload_off = 0,
+        payload_on = 1,
+    ), 
+    "Grid Charge Power": WriteParameter( # ALL
+        addr = 225 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 0.1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 150, # TODO
+        unit = "kW",
+    ), 
+    "Forced Charge Enable": WriteParameter( # ALL
+        addr = 229 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SWITCH,
+        payload_off = 0,
+        payload_on = 1,
+    ),
+    # "PV Power Limit": WriteParameter( # ALL # "PV power setting"
+    #     addr = 33 + 1,
+    #     count = 1,
+    #     dtype = DataType.U16,
+    #     multiplier = 1,
+    #     register_type = RegisterTypes.HOLDING_REGISTER,
+    #     ha_entity_type = HAEntityType.NUMBER,
+    #     unit="kW",
+    #     min = 0,
+    #     max = 500
+    # ), 
+    "Output Power Limit": WriteParameter( # ALL # "Output Power Upper Limit"
+        addr = 58 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        unit="%",
+        min = 0,
+        max = 120
+    ), 
+    # "Load Power Limit": WriteParameter( # ALL # "Output Power Upper Limit"
+    #     addr = 107 + 1,
+    #     count = 1,
+    #     dtype = DataType.U16,
+    #     multiplier = 1,
+    #     register_type = RegisterTypes.HOLDING_REGISTER,
+    #     ha_entity_type = HAEntityType.NUMBER,
+    #     unit="kW",
+    #     min = 0,
+    #     max = 500
+    # ), 
+    # "Grid Power Limit": WriteParameter( # ALL # "Grid Power UP Limit"
+    #     addr = 65 + 1,
+    #     count = 1,
+    #     dtype = DataType.U16,
+    #     multiplier = 1,
+    #     register_type = RegisterTypes.HOLDING_REGISTER,
+    #     ha_entity_type = HAEntityType.NUMBER,
+    #     unit="kW",
+    #     min = 0,
+    #     max = 500
+    # ), 
+    # "Upper limit power feed from grid": WriteParameter( # ALL # "Grid Power UP Limit"
+    #     addr = 169 + 1,
+    #     count = 1,
+    #     dtype = DataType.U16,
+    #     multiplier = 1,
+    #     register_type = RegisterTypes.HOLDING_REGISTER,
+    #     ha_entity_type = HAEntityType.NUMBER,
+    #     unit="kW",
+    #     min = 0,
+    #     max = 500
+    # ), 
 }
 
 
