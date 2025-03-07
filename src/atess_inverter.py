@@ -3,7 +3,7 @@ from .server import Server
 import struct
 import logging
 from .enums import DataType
-from .atess_registers import atess_parameters, PBD_parameters, PCS_parameters, not_PCS_parameters, model_code_to_name
+from .atess_registers import atess_parameters, PBD_parameters, PCS_parameters, not_PCS_parameters, model_code_to_name, atess_write_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ class AtessInverter(Server):
         logger.info(f"{self.model}")
         if "PCS" in self.model:
             self._parameters.update(PCS_parameters)
+            self._write_parameters.update(atess_write_parameters)
             logger.info("Added PCS-Specific Registers.")
         else:
             self._parameters.update(not_PCS_parameters)

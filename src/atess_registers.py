@@ -1,4 +1,4 @@
-from .enums import DataType, DeviceClass, Parameter, RegisterTypes
+from .enums import DataType, DeviceClass, HAEntityType, Parameter, RegisterTypes, WriteParameter, WriteSelectParameter
 
 not_PCS_parameters: dict[str, Parameter]  = {
     # All except PCS
@@ -922,6 +922,20 @@ model_code_to_name: dict[int, str] = {
     23001: "PBD350 (old model)",
     23002: "PBD350 (new model)",
     23003: "PBD250",
+}
+
+atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
+    "Mode selection": WriteSelectParameter(
+        addr = 26 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SELECT,
+        options=["Load First", "Battery First", "Economy Mode", "Peak Shaving", "Time Schedule", "Manual Dispatch", "Battery Protect", "Backup Power Management", "Constant Power Discharge", "Forced Charging", "Smart Meter Mode", "Bat-Smart Meter"],
+        value_template = "{% set options = [\"Load First\", \"Battery First\", \"Economy Mode\", \"Peak Shaving\", \"Time Schedule\", \"Manual Dispatch\", \"Battery Protect\", \"Backup Power Management\", \"Constant Power Discharge\", \"Forced Charging\", \"Smart Meter Mode\", \"Bat-Smart Meter\"] %}{% if value|int >= 0 and value|int < options|length %}{{ options[value|int] }}{% else %}{{ value }}{% endif %}",
+        command_template = "{% set options = [\"Load First\", \"Battery First\", \"Economy Mode\", \"Peak Shaving\", \"Time Schedule\", \"Manual Dispatch\", \"Battery Protect\", \"Backup Power Management\", \"Constant Power Discharge\", \"Forced Charging\", \"Smart Meter Mode\", \"Bat-Smart Meter\"] %}{% if value in options %}{{ options.index(value) }}{% else %}{{ value }}{% endif %}"
+    )
 }
 
 
