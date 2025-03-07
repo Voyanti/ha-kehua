@@ -501,6 +501,16 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.FREQUENCY,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
+    "Grid State": {
+        "addr": 28 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 1,
+        "unit": "",
+        "device_class": DeviceClass.ENUM,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "remarks": "0: abnormal, 1: normal"
+    },
     "Output Apparent Power": {
         "addr": 78 + 1,
         "count": 1,
