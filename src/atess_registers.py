@@ -23,7 +23,7 @@ not_PCS_parameters: dict[str, Parameter]  = {
     "PV1 Power": {
         "addr": 51 + 1,
         "count": 1,
-        "dtype": DataType.U16,   # Why not signed like the rest
+        "dtype": DataType.I16,   # Unsigned according to protocol, but observation says otherwise
         "multiplier": 0.1,
         "unit": "kW",
         "device_class": DeviceClass.POWER,
