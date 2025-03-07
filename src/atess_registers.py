@@ -629,7 +629,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.POWER_FACTOR,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current A": { # load current u on inverter disp
+    "Load Current U": { # load current u on inverter disp
         "addr": 53 + 1,
         "count": 1,
         "dtype": DataType.I16,
@@ -638,7 +638,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current B": {# load current v on inverter disp
+    "Load Current V": {# load current v on inverter disp
         "addr": 54 + 1,
         "count": 1,
         "dtype": DataType.I16,
@@ -647,7 +647,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.CURRENT,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Load Current C": {# load current w on inverter disp
+    "Load Current W": {# load current w on inverter disp
         "addr": 55 + 1,
         "count": 1,
         "dtype": DataType.I16,
