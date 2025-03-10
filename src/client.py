@@ -3,6 +3,7 @@ from .enums import RegisterTypes
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from pymodbus.pdu import ExceptionResponse, ModbusPDU
+from pymodbus.exceptions import ModbusIOException
 import logging
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from time import sleep
@@ -43,20 +44,36 @@ class Client:
                                              stopbits=cl_options.stopbits)
 
     def read(self, address, count, slave_id, register_type):
+        """
+            Calls the appropriate read function, based on the register type (input / holding).
+
+            On ModbusIOException: wait 20s and retry
+        """
         logger.debug(f"Reading param from {address=}, {count=} on {slave_id=}, {register_type=}")
 
-        if register_type == RegisterTypes.HOLDING_REGISTER:
-            result = self.client.read_holding_registers(address=address-1,
-                                                        count=count,
-                                                        slave=slave_id)
-        elif register_type == RegisterTypes.INPUT_REGISTER:
-            result = self.client.read_input_registers(address=address-1,
-                                                      count=count,
-                                                      slave=slave_id)
-        else:
-            # will maybe never happen?
-            logger.info(f"unsupported register type {register_type}")
-            raise ValueError(f"unsupported register type {register_type}")
+        need_result = True
+        while need_result:
+            try:
+                if register_type == RegisterTypes.HOLDING_REGISTER:
+                    result = self.client.read_holding_registers(address=address-1,
+                                                                count=count,
+                                                                slave=slave_id)
+                elif register_type == RegisterTypes.INPUT_REGISTER:
+                    result = self.client.read_input_registers(address=address-1,
+                                                            count=count,
+                                                            slave=slave_id)
+                else:
+                    logger.info(f"unsupported register type {register_type}")
+                    raise ValueError(f"unsupported register type {register_type}")
+                
+                # no IOexception:
+                need_result = False
+            except ModbusIOException as e:
+                need_result = True
+                logger.info(str(e))
+                logger.info(f"Sleep 20s and retry")
+                sleep(20)
+
         return result
     
     def write(self, values: list[int], address: int, slave_id: int, register_type):
