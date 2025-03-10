@@ -451,7 +451,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
-        "unit": "kVA",
+        "unit": "",
         "device_class": DeviceClass.APPARENT_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -469,7 +469,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.I16,
         "multiplier": 0.1,
-        "unit": "kVar",
+        "unit": "",
         "device_class": DeviceClass.REACTIVE_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -497,7 +497,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
-        "unit": "kVA",
+        "unit": "",
         "device_class": DeviceClass.APPARENT_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -515,7 +515,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.I16,
         "multiplier": 0.1,
-        "unit": "kVar",
+        "unit": "",
         "device_class": DeviceClass.REACTIVE_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -579,7 +579,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.U16,
         "multiplier": 0.1,
-        "unit": "kVA",
+        "unit": "",
         "device_class": DeviceClass.APPARENT_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -597,7 +597,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "count": 1,
         "dtype": DataType.I16,
         "multiplier": 0.1,
-        "unit": "kVar",
+        "unit": "",
         "device_class": DeviceClass.REACTIVE_POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
@@ -1007,7 +1007,7 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
         payload_off = 0,
         payload_on = 1,
     ), 
-    "Grid Charge Power": WriteParameter( # ALL
+    "Max Grid Charge Power": WriteParameter( # ALL
         addr = 225 + 1,
         count = 1,
         dtype = DataType.U16,
@@ -1020,6 +1020,16 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
     ), 
     "Forced Charge Enable": WriteParameter( # ALL
         addr = 229 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SWITCH,
+        payload_off = 0,
+        payload_on = 1,
+    ),
+    "Anti Reflux Enable": WriteParameter( # HPS, PCS, HPSTL
+        addr = 16 + 1,
         count = 1,
         dtype = DataType.U16,
         multiplier = 1,
@@ -1061,18 +1071,18 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
     #     min = 0,
     #     max = 500
     # ), 
-    # "Grid Power Limit": WriteParameter( # ALL # "Grid Power UP Limit"
-    #     addr = 65 + 1,
-    #     count = 1,
-    #     dtype = DataType.U16,
-    #     multiplier = 1,
-    #     register_type = RegisterTypes.HOLDING_REGISTER,
-    #     ha_entity_type = HAEntityType.NUMBER,
-    #     unit="kW",
-    #     min = 0,
-    #     max = 500
-    # ), 
-    # "Upper limit power feed from grid": WriteParameter( # ALL # "Grid Power UP Limit"
+    "Grid Power UP Limit": WriteParameter( # ALL # "Grid Power UP Limit"
+        addr = 65 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        unit="kW",
+        min = 0,
+        max = 500
+    ), 
+    # "Max Grid Import Power": WriteParameter( # ALL # "Upper limit powerfeed from grid"
     #     addr = 169 + 1,
     #     count = 1,
     #     dtype = DataType.U16,
@@ -1082,6 +1092,28 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
     #     unit="kW",
     #     min = 0,
     #     max = 500
+    # ), 
+    "Discharge current limit": WriteParameter( # ALL # "Upper limit powerfeed from grid"
+        addr = 155 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 0.1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        unit="A",
+        min = 0,
+        max = 1000 # TODO "10000"
+    ), 
+    # "Battery Discharge Current HPS": WriteParameter( # HPS # "Upper limit powerfeed from grid"
+    #     addr = 172 + 1,
+    #     count = 1,
+    #     dtype = DataType.U16,
+    #     multiplier = 1,
+    #     register_type = RegisterTypes.HOLDING_REGISTER,
+    #     ha_entity_type = HAEntityType.NUMBER,
+    #     unit="A",
+    #     min = 0,
+    #     max = 1000 # TODO "10000"
     # ), 
 }
 
