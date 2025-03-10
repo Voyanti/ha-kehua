@@ -4,6 +4,7 @@ import struct
 import logging
 from .enums import DataType
 from .atess_registers import atess_parameters, PBD_parameters, PCS_parameters, not_PCS_parameters, model_code_to_name, atess_write_parameters
+from pymodbus.client import ModbusSerialClient
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +117,7 @@ class AtessInverter(Server):
         def _decode_utf8(registers): # TODO
             """ Two ASCII chars per 16-bit register """
             
-            packed = struct.pack('>H', registers[0])
-            return packed.decode("utf-8")       
+            return ModbusSerialClient.convert_from_registers(registers=registers, data_type=ModbusSerialClient.DATATYPE.STRING)   
 
         if dtype == DataType.U16: return _decode_u16(registers)
         elif dtype == DataType.I16: return _decode_i16(registers)
@@ -144,6 +144,6 @@ class AtessInverter(Server):
    
 if __name__ == "__main__":
     inv = AtessInverter("", "", "", "")
-    print(inv._decoded([0x6154], DataType.UTF8))# aT = 0x61, 0x54
+    print(inv._decoded([0x6154, 0x5461, 0x6154], DataType.UTF8))# aT = 0x61, 0x54
     print(inv._decoded([2**16-1], DataType.I16))
     print(inv._decoded([0x0304], DataType.I8H))
