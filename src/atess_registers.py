@@ -63,15 +63,15 @@ atess_parameters: dict[str, Parameter] = {
         "unit": "",
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },  # TODO count 5? p30
-    "Software Version": {
-        "addr": 280 + 1,
-        "count": 20,
-        "dtype": DataType.UTF8,
-        "device_class": DeviceClass.ENUM,
-        "multiplier": 1,
-        "unit": "",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
+    # "Software Version": {
+    #     "addr": 280 + 1,
+    #     "count": 20,
+    #     "dtype": DataType.UTF8,
+    #     "device_class": DeviceClass.ENUM,
+    #     "multiplier": 1,
+    #     "unit": "",
+    #     "register_type": RegisterTypes.HOLDING_REGISTER,
+    # },
     "Device Type Code": {
         "addr": 43 + 1,
         "count": 1,

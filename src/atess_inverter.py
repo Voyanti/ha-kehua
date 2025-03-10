@@ -144,6 +144,6 @@ class AtessInverter(Server):
    
 if __name__ == "__main__":
     inv = AtessInverter("", "", "", "")
-    print(inv._decoded([0x6154, 0x5461, 0x6154], DataType.UTF8))# aT = 0x61, 0x54
+    print(inv._decoded([0x6154, 0x5461, 0x8854], DataType.UTF8))# aT = 0x61, 0x54
     print(inv._decoded([2**16-1], DataType.I16))
     print(inv._decoded([0x0304], DataType.I8H))
