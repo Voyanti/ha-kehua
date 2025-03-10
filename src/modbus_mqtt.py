@@ -115,8 +115,10 @@ class MqttClient(mqtt.Client):
                 "availability_topic": availability_topic,
                 "device": device,
                 "device_class": details["device_class"].value,
-                "unit_of_measurement": details["unit"],
             }
+            if details["unit"] != "":
+                discovery_payload.update(unit_of_measurement=details["unit"])
+
             state_class = details.get("state_class", False)
             if state_class:
                 discovery_payload['state_class'] = state_class
