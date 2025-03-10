@@ -63,6 +63,15 @@ atess_parameters: dict[str, Parameter] = {
         "unit": "",
         "register_type": RegisterTypes.HOLDING_REGISTER,
     },  # TODO count 5? p30
+    "Software Version": {
+        "addr": 280 + 1,
+        "count": 20,
+        "dtype": DataType.UTF8,
+        "device_class": DeviceClass.ENUM,
+        "multiplier": 1,
+        "unit": "",
+        "register_type": RegisterTypes.HOLDING_REGISTER,
+    },
     "Device Type Code": {
         "addr": 43 + 1,
         "count": 1,
@@ -246,15 +255,15 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "unit": "°C",
         "register_type": RegisterTypes.INPUT_REGISTER,
     },
-    "Battery Discharge Cutoff": { # 
-        "addr": 47 + 1,
-        "count": 1,
-        "dtype": DataType.U16,
-        "device_class": DeviceClass.ENUM,
-        "multiplier": 1,
-        "unit": "%",
-        "register_type": RegisterTypes.HOLDING_REGISTER,
-    },
+    # "Battery Discharge Cutoff": { # 
+    #     "addr": 47 + 1,
+    #     "count": 1,
+    #     "dtype": DataType.U16,
+    #     "device_class": DeviceClass.ENUM,
+    #     "multiplier": 1,
+    #     "unit": "%",
+    #     "register_type": RegisterTypes.HOLDING_REGISTER,
+    # },
     "Frequency Shift Enable": {
         "addr": 79 + 1,
         "count": 1,
