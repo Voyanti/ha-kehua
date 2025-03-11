@@ -163,6 +163,7 @@ ParameterReq = TypedDict(
 class Parameter(ParameterReq, total=False):
     remarks: str
     state_class: Literal["measurement", "total", "total_increasing"]
+    value_template: str
 
     # all oarameters are required to have these fields
 WriteParameterReq = TypedDict(
