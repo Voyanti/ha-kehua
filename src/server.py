@@ -219,7 +219,7 @@ class Server(ABC):
         self.input_state = []
 
         for batch in self.holding_batches:
-            logger.info(f"Reading batch from {batch[0]}, {len(batch)=}, {batch[-1]}")
+            logger.info(f"Reading holding batch from {batch[0]}, {len(batch)=}, {batch[-1]}")
             result = self.connected_client.read(
                 batch[0], len(batch), self.modbus_id, RegisterTypes.HOLDING_REGISTER)   # TODO check
 
@@ -230,6 +230,7 @@ class Server(ABC):
             self.holding_state.extend(result.registers)
             
         for batch in self.input_batches:
+            logger.info(f"Reading input batch from {batch[0]}, {len(batch)=}, {batch[-1]}")
             result = self.connected_client.read(
                 batch[0], len(batch), self.modbus_id, RegisterTypes.INPUT_REGISTER)
 
