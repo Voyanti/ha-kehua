@@ -63,11 +63,11 @@ class App:
         self.sleep_if_midnight()
 
         logger.info("Instantiate clients")
-        self.clients = self.client_instantiator_callback(self.OPTIONS)
+        self.clients: list[Client]= self.client_instantiator_callback(self.OPTIONS)
         logger.info(f"{len(self.clients)} clients set up")
 
         logger.info("Instantiate servers")
-        self.servers = self.server_instantiator_callback(
+        self.servers: list[Server] = self.server_instantiator_callback(
             self.OPTIONS, self.clients)
         logger.info(f"{len(self.servers)} servers set up")
         # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
@@ -108,24 +108,25 @@ class App:
         # every read_interval seconds, read the registers and publish to mqtt
         while True:
             for server in self.servers:
-                for register_name, details in server.write_parameters.items():
-                    sleep(READ_INTERVAL)
-                    value = server.read_registers(register_name)
+                # update server state from modbus
+                server.read_batches()
+
+                # index required registers from saved state
+                # publish to ha
+                for register_name in server.write_parameters:
+                    value = server.read_from_state(register_name)
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
-                logger.info(
-                    f"Published all Write parameter values for {server.name}")
-                for register_name, details in server.parameters.items():
-                    sleep(READ_INTERVAL)
-                    value = server.read_registers(register_name)
+                    
+                logger.info(f"Published all Write parameter values for {server.name}")
+                sleep(READ_INTERVAL)
+
+                for register_name in server.parameters:
+                    value = server.read_from_state(register_name)
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
-                logger.info(
-                    f"Published all Read parameter values for {server.name}")
+                logger.info(f"Published all Read parameter values for {server.name}")
             logger.info("")
-            
-            # if not RECV_Q.empty():
-            #     message_handler(RECV_Q, self.servers)
 
             if loop_once:
                 break
@@ -184,6 +185,13 @@ if __name__ == "__main__":
         app.connect()
         app.loop()
     else:                   # running locally
+        logging.basicConfig(
+            level=logging.DEBUG,  # Set logging level
+            # Format with timestamp
+            format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",  # Date format
+)
+        
         from .client import SpoofClient
         app = App(instantiate_clients, instantiate_servers, sys.argv[1])
         app.OPTIONS.mqtt_host = "localhost"
@@ -202,6 +210,10 @@ if __name__ == "__main__":
         app.setup()
         for s in app.servers:
             s.connect = lambda: None
+            s.model = "PCS500"
+            s.setup_valid_registers_for_model()
+            s.find_register_extent()
+            s.create_batches()
         app.connect()
         app.loop(False)
 

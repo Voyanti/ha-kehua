@@ -1386,3 +1386,80 @@ deprecated: dict[str, Parameter]= {
     #     "register_type": RegisterTypes.HOLDING_REGISTER,
     # },
 }
+
+if __name__ == "__main__":
+    def create_batches(parameters: dict[str, Parameter | WriteParameter | WriteSelectParameter]):
+        holding_params = [(k, v) for k, v in parameters.items() if v["register_type"] == RegisterTypes.HOLDING_REGISTER]
+        input_params = [(k, v) for k, v in parameters.items() if v["register_type"] == RegisterTypes.INPUT_REGISTER]
+
+        for params in (holding_params, input_params):
+            params = sorted(params, key=lambda x: x[1]["addr"])
+            print([i[1]["addr"] for i in params])
+
+
+    def find_consecutive_groups(numbers):
+        """
+        Find groups of consecutive numbers in a list.
+        
+        Args:
+            numbers: A list of integers
+            
+        Returns:
+            A list of lists, where each inner list is a group of consecutive numbers
+        """
+        if not numbers:
+            return []
+        
+        # Sort the input list
+        numbers = sorted(numbers)
+        
+        # Initialize the result and the first group
+        result = []
+        current_group = [numbers[0]]
+        
+        # Iterate through the rest of the numbers
+        for i in range(1, len(numbers)):
+            # If the current number is consecutive to the previous one
+            if numbers[i] == numbers[i-1] + 1:
+                current_group.append(numbers[i])
+            # If not consecutive and not a duplicate
+            elif numbers[i] != numbers[i-1]:
+                # Save the current group if it's not empty
+                if current_group:
+                    result.append(current_group)
+                # Start a new group
+                current_group = [numbers[i]]
+        
+        # Add the last group if it's not empty
+        if current_group:
+            result.append(current_group)
+        
+        return result
+
+    # # Your two lists
+    # list1 = [1, 9, 14, 15, 17, 27, 44, 45, 48, 59, 66, 67, 68, 80, 81, 84, 101, 102, 151, 156, 175, 179, 181, 226, 230, 341]
+    # list2 = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 29, 36, 37, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 69, 73, 79, 80, 81, 82, 83, 85, 89, 91, 95, 97, 136, 137, 138, 163, 172, 172, 175, 176, 177, 177, 181, 229, 271]
+
+    # # Find the consecutive groups in each list
+    # groups_list1 = find_consecutive_groups(list1)
+    # groups_list2 = find_consecutive_groups(list2)
+
+    # # Print the results
+    # print("Consecutive groups in list1:")
+    # for i, group in enumerate(groups_list1):
+    #     print(f"Group {i+1}: {group}")
+
+    # print("\nConsecutive groups in list2:")
+    # for i, group in enumerate(groups_list2):
+    #     print(f"Group {i+1}: {group}")
+
+    # # Count the number of groups in each list
+    # print(f"\nNumber of consecutive groups in list1: {len(groups_list1)}")
+    # print(f"Number of consecutive groups in list2: {len(groups_list2)}")
+
+    params: dict[str, Parameter | WriteParameter | WriteSelectParameter] = atess_parameters.copy()
+    # params.update(PCS_parameters)
+    params.update(PBD_parameters)
+    params.update(not_PCS_parameters)
+    # params.update(atess_write_parameters)
+    create_batches(params)

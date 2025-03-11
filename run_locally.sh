@@ -9,7 +9,7 @@ mosquitto -p 1884 -d
 echo "Hello Sungrow"
 echo "---"
 
-python3 -m src.app data/options.yaml
+python3 -m src.app config.yaml
 
 echo "sleep"
 sleep 3
