@@ -472,6 +472,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "unit": "kW",
         "device_class": DeviceClass.POWER,
         "register_type": RegisterTypes.INPUT_REGISTER,
+        "state_class": "measurement"
     },
     "Bypass Reactive Power": { # fout
         "addr": 20 + 1,
@@ -513,7 +514,7 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
     "Output Active Power": {
         "addr": 79 + 1,
         "count": 1,
-        "dtype": DataType.U16,
+        "dtype": DataType.I16,
         "multiplier": 0.1,
         "unit": "kW",
         "device_class": DeviceClass.POWER,
@@ -702,7 +703,60 @@ PCS_parameters: dict[str, Parameter]  = {  # battery inverters
         "device_class": DeviceClass.ENERGY,
         "register_type": RegisterTypes.INPUT_REGISTER,
         "state_class": "total"
-    }
+    },
+    "BMS Battery Status": {
+        "addr": 176 + 1,
+        "count": 1,
+        "dtype": DataType.I8H,
+        "multiplier": 1,
+        "unit": "",
+        "device_class": DeviceClass.ENUM,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "value_template": """
+                            {% set states = {
+                            '0': 'Hold',
+                            '1': 'Charging and discharging disable',
+                            '2': 'Charging disable',
+                            '3': 'Discharging disable',
+                            '4': 'Charging',
+                            '5': 'Discharging'
+                            } %}
+                            {{ states[value] if value in states else 'unknown' }}
+                            """
+    },
+    "BMS System Status": {
+        "addr": 176 + 1,
+        "count": 1,
+        "dtype": DataType.I8L,
+        "multiplier": 1,
+        "unit": "",
+        "device_class": DeviceClass.ENUM,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+    },
+    "Running State": {
+        "addr": 180 + 1,
+        "count": 1,
+        "dtype": DataType.U16,
+        "multiplier": 1,
+        "unit": "",
+        "device_class": DeviceClass.ENUM,
+        "register_type": RegisterTypes.INPUT_REGISTER,
+        "value_template": """
+                        {% set states = {
+                        '0': 'Waiting',
+                        '1': 'Inspection',
+                        '2': 'On-Grid',
+                        '3': 'Fault',
+                        '4': 'Permanentfault',
+                        '5': 'Off-Grid',
+                        '6': 'Single PV mode',
+                        '7': 'Switch-to-off-grid',
+                        '8': 'Switch-to-on-grid'
+                        } %}
+                        {{ states[value] if value in states else 'unknown' }}
+                        """
+    },
+
 }
 # TODO bypass p 37 atess-modbus-rtu-protocol-v37.pdf
 
@@ -936,9 +990,19 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
         payload_off = 0,
         payload_on = 1,
     ),
+    "BMS Communication Enable": WriteParameter( # PCS
+        addr = 14 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.SWITCH,
+        payload_off = 0,
+        payload_on = 1,
+    ),
 
     # Battery. NOTE Actually all types have this holding register
-    "SOC Up Limit": WriteParameter( # ALL
+    "Generator Start SOC": WriteParameter( # ALL "SOC Up Limit" # When off-grid AND in diesel Generator (DG) mode
         addr = 66 + 1,
         count = 1,
         dtype = DataType.U16,
@@ -949,7 +1013,18 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
         max = 100,
         unit = "%",
     ), 
-    "SOC Down Limit": WriteParameter( # ALL
+    "Grid Power Compensation": WriteParameter( # ALL
+        addr = 44 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 0.1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 100,
+        unit = "kW",
+    ), 
+    "Generator Stop SOC": WriteParameter( # ALL
         addr = 67 + 1,
         count = 1,
         dtype = DataType.U16,
@@ -960,6 +1035,39 @@ atess_write_parameters: dict[str, WriteParameter | WriteSelectParameter] = {
         max = 100,
         unit = "%",
     ), 
+    "BMS Max Charge Current": WriteParameter( # ALL
+        addr = 100 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 0.1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 1000,
+        unit = "A",
+    ), 
+    "BMS Max Discharge Current": WriteParameter( # ALL
+        addr = 101 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 0.1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 1000,
+        unit = "A",
+    ), 
+    "Battery Charging Saturation": WriteParameter( # ALL
+        addr = 150 + 1,
+        count = 1,
+        dtype = DataType.U16,
+        multiplier = 1,
+        register_type = RegisterTypes.HOLDING_REGISTER,
+        ha_entity_type = HAEntityType.NUMBER,
+        min = 0,
+        max = 10,
+    ), 
+
 
     "Charge Cutoff SOC": WriteParameter( # ALL
         addr = 178 + 1,
