@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional, TypedDict
 
 from .helpers import slugify
-from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter, WriteSelectParameter
+from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter, WriteSelectParameter, device_class_to_rounding
 from .client import Client
 from .options import ServerOptions
 
@@ -219,7 +219,7 @@ class Server(ABC):
         self.input_state = []
 
         for batch in self.holding_batches:
-            logger.info(f"Reading holding batch from {batch[0]}, {len(batch)=}, {batch[-1]}")
+            logger.info(f"Reading holding batch from {batch[0]} to {batch[-1]}, {len(batch)=}")
             result = self.connected_client.read(
                 batch[0], len(batch), self.modbus_id, RegisterTypes.HOLDING_REGISTER)   # TODO check
 
@@ -230,7 +230,7 @@ class Server(ABC):
             self.holding_state.extend(result.registers)
             
         for batch in self.input_batches:
-            logger.info(f"Reading input batch from {batch[0]}, {len(batch)=}, {batch[-1]}")
+            logger.info(f"Reading input batch from {batch[0]} to {batch[-1]}, {len(batch)=}")
             result = self.connected_client.read(
                 batch[0], len(batch), self.modbus_id, RegisterTypes.INPUT_REGISTER)
 
@@ -241,16 +241,6 @@ class Server(ABC):
             self.input_state.extend(result.registers)
 
     def read_from_state(self, parameter_name: str):
-        device_class_to_rounding: dict[DeviceClass, int] = {    # TODO define in deviceClass type
-            DeviceClass.REACTIVE_POWER: 0,
-            DeviceClass.ENERGY: 1,
-            DeviceClass.FREQUENCY: 1,
-            DeviceClass.POWER_FACTOR: 1,
-            DeviceClass.APPARENT_POWER: 0, 
-            DeviceClass.CURRENT: 1,
-            DeviceClass.VOLTAGE: 0,
-            DeviceClass.POWER: 0
-        }
         param = self.all_parameters.get(parameter_name)  # type: ignore
         if param is None:
             raise ValueError(f"Attempted to read {parameter_name=} for server {self.name}, but it is not defined")
@@ -296,16 +286,6 @@ class Server(ABC):
             -----------
                 - parameter_name: str: slave parameter name string as defined in register map
         """
-        device_class_to_rounding: dict[DeviceClass, int] = {    # TODO define in deviceClass type
-            DeviceClass.REACTIVE_POWER: 0,
-            DeviceClass.ENERGY: 1,
-            DeviceClass.FREQUENCY: 1,
-            DeviceClass.POWER_FACTOR: 1,
-            DeviceClass.APPARENT_POWER: 0, 
-            DeviceClass.CURRENT: 1,
-            DeviceClass.VOLTAGE: 0,
-            DeviceClass.POWER: 0
-        }
         param = self.parameters.get(parameter_name, self.write_parameters.get(parameter_name))  # type: ignore
         if param is None:
             logger.info(f"No parameter {parameter_name=} for server {self.name} defined. Attempt to read.")
@@ -314,14 +294,11 @@ class Server(ABC):
         address = param["addr"]
         dtype = param["dtype"]
         multiplier = param["multiplier"]
-        # count = param.get('count', dtype.size // 2) #TODO
-        count = param["count"]  # TODO
-        # unit = param["unit"]
+        count = param["count"]
         device_class = param.get("device_class")
         modbus_id = self.modbus_id
         register_type = param["register_type"]
 
-        # TODO count
         logger.debug(
             f"Reading param {parameter_name} ({register_type}) of {dtype=} from {address=}, {multiplier=}, {count=}, {self.modbus_id=}")
 
