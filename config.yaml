@@ -11,7 +11,7 @@ url: "https://github.com/Voyanti/ha-atess"
 arch:
   - aarch64
   - amd64
-image: ghcr.io/voyanti/ha-atess:latest
+image: "ghcr.io/voyanti/ha-atess:latest"
 options:
   servers:
     - name: AtessPCS
