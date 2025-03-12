@@ -1,7 +1,8 @@
 name: "Atess Inverter"
 version: "0.4.27"
-slug: "atess"
-description: "Atess Inverter"
+image: ghcr.io/voyanti/ha-atess
+slug: "ha-atess"
+description: "Atess Inverter Prebuilt"
 init: false
 startup: application
 boot: auto
@@ -11,7 +12,6 @@ url: "https://github.com/Voyanti/ha-atess"
 arch:
   - aarch64
   - amd64
-image: "ghcr.io/voyanti/ha-atess:latest"
 options:
   servers:
     - name: AtessPCS
