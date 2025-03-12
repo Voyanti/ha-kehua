@@ -39,8 +39,17 @@ def exit_handler(
 
     mqtt_client.loop_stop()
 
-
-
+def test_different_batch_sizes(client0: Client):
+    from .enums import RegisterTypes
+    import time
+    count = 125
+    logger.info(f"\n{count=}")
+    start = time.time()
+    result = client0.read(1, count, 1, RegisterTypes.INPUT_REGISTER)
+    if result.isError():
+        client0._handle_error_response(result)
+        raise Exception(f"Error reading registers")
+    logger.info(f"done. elapsed time: {time.time()-start},\n{result.registers}\n")
 
 class App:
     def __init__(self, client_instantiator_callback, server_instantiator_callback, options_rel_path=None) -> None:
