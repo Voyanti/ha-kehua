@@ -51,7 +51,7 @@ jobs:
         run: |
           if [ "$VERSION" = "$PREV_VERSION" ]; then
             echo "Version not updated. Skipping build."
-            exit 1
+            exit 0  # Exit successfully instead of failing the workflow
           fi
 
       - name: Log in to GitHub Container Registry
