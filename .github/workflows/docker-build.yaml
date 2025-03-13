@@ -35,8 +35,16 @@ jobs:
       - name: Read previous version
         id: previous_version
         run: |
-          git show HEAD^:version.yaml > prev_version.yaml || echo "version: none" > prev_version.yaml
-          echo "PREV_VERSION=$(yq '.version' prev_version.yaml)" >> $GITHUB_ENV
+          # Ensure we have history to access HEAD^
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git show HEAD^:config.yaml > prev_config.yaml
+          else
+            echo "version: none" > prev_config.yaml
+          fi
+
+          # Extract the version using yq
+          PREV_VERSION=$(yq '.version' prev_config.yaml)
+          echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_ENV
 
       - name: Compare versions
         id: check_version
