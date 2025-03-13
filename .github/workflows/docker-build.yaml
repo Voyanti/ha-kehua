@@ -45,6 +45,8 @@ jobs:
           context: .
           push: true
           platforms: linux/arm64  # Target architecture for Raspberry Pi 5
-          tags: ghcr.io/${{ env.REPO_OWNER }}/${{ github.event.repository.name }}:latest
+          tags: |
+            ghcr.io/${{ env.REPO_OWNER }}/${{ github.event.repository.name }}:latest
+            ghcr.io/${{ env.REPO_OWNER }}/${{ github.event.repository.name }}:${{ env.VERSION }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
