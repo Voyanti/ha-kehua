@@ -1,7 +1,7 @@
 name: "Kehua Inverter"
-version: "0.2.0"
-image: ghcr.io/voyanti/ha-atess
-slug: "voyanti_kehua"
+version: "0.2.1"
+image: ghcr.io/voyanti/ha-kehua
+slug: "ha-kehua"
 description: "Kehua Inverter"
 init: false
 startup: application
