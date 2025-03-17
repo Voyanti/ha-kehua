@@ -1,22 +1,25 @@
-import enum
-from typing import Optional, Any
+from enum import Enum
+from typing import Literal, Optional, Any, TypedDict
 
 
-class RegisterTypes(enum.Enum):
-    INPUT_REGISTER = 3          # Read Only
-    HOLDING_REGISTER = 4        # Read/ Write
+class RegisterTypes(Enum):
+    INPUT_REGISTER = 3  # Read Only
+    HOLDING_REGISTER = 4  # Read/ Write
 
 
-class DataType(enum.Enum):
+class DataType(Enum):
     """
-        Data types used by server registers. Used to choose decoding method. depending op server.
+    Data types used by server registers. Used to choose decoding method. depending op server.
     """
+
     # Unsigned integers
     U16 = "U16"
     U32 = "U32"
     U64 = "U64"
-    
+
     # Signed integers
+    I8L = "I8L"
+    I8H = "I8H"
     I16 = "I16"
     I32 = "I32"
     I64 = "I64"
@@ -24,7 +27,7 @@ class DataType(enum.Enum):
     # Floats
     F32 = "F32"
     F64 = "F64"
-    
+
     # String
     UTF8 = "UTF8"
 
@@ -43,7 +46,7 @@ class DataType(enum.Enum):
             DataType.F32: 4,
             DataType.U64: 8,
             DataType.I64: 8,
-            DataType.UTF8: None
+            DataType.UTF8: None,
         }
         return sizes[self]
 
@@ -51,13 +54,15 @@ class DataType(enum.Enum):
     def min_value(self) -> Optional[int]:
         """Returns the minimum value for numeric types."""
         ranges = {
+            DataType.I8L: -128,  # -2^7
+            DataType.I8H: -128,  # -2^7
             DataType.U16: 0,
             DataType.U32: 0,
             DataType.I16: -32768,  # -2^15
             DataType.I32: -2147483648,  # -2^31
             DataType.U64: 0,
             DataType.I64: -18446744073709551616,
-            DataType.UTF8: None
+            DataType.UTF8: None,
         }
         return ranges[self]
 
@@ -65,16 +70,146 @@ class DataType(enum.Enum):
     def max_value(self) -> Optional[int]:
         """Returns the maximum value for numeric types."""
         ranges = {
+            DataType.I8L: 127,  # 2^7-1
+            DataType.I8H: 127,  # 2^7-1
             DataType.U16: 65535,  # 2^16 - 1
             DataType.U32: 4294967295,  # 2^32 - 1
             DataType.I16: 32767,  # 2^15 - 1
             DataType.I32: 2147483647,  # 2^31 - 1
             DataType.U64: 18446744073709551615,
             DataType.I64: 9223372036854775807,
-            DataType.UTF8: None
+            DataType.UTF8: None,
         }
         return ranges[self]
 
+
+# https://www.home-assistant.io/integrations/sensor#device-class
+class DeviceClass(Enum):
+    DATE = "date"
+    ENUM = "enum"
+    TIMESTAMP = "timestamp"
+    APPARENT_POWER = "apparent_power"
+    AQI = "aqi"
+    ATMOSPHERIC_PRESSURE = "atmospheric_pressure"
+    BATTERY = "battery"
+    CARBON_MONOXIDE = "carbon_monoxide"
+    CARBON_DIOXIDE = "carbon_dioxide"
+    CURRENT = "current"
+    DATA_RATE = "data_rate"
+    DATA_SIZE = "data_size"
+    DISTANCE = "distance"
+    DURATION = "duration"
+    ENERGY = "energy"
+    ENERGY_STORAGE = "energy_storage"
+    FREQUENCY = "frequency"
+    GAS = "gas"
+    HUMIDITY = "humidity"
+    ILLUMINANCE = "illuminance"
+    IRRADIANCE = "irradiance"
+    MOISTURE = "moisture"
+    MONETARY = "monetary"
+    NITROGEN_DIOXIDE = "nitrogen_dioxide"
+    NITROGEN_MONOXIDE = "nitrogen_monoxide"
+    NITROUS_OXIDE = "nitrous_oxide"
+    OZONE = "ozone"
+    PH = "ph"
+    PM1 = "pm1"
+    PM10 = "pm10"
+    PM25 = "pm25"
+    POWER_FACTOR = "power_factor"
+    POWER = "power"
+    PRECIPITATION = "precipitation"
+    PRECIPITATION_INTENSITY = "precipitation_intensity"
+    PRESSURE = "pressure"
+    REACTIVE_POWER = "reactive_power"
+    SIGNAL_STRENGTH = "signal_strength"
+    SOUND_PRESSURE = "sound_pressure"
+    SPEED = "speed"
+    SULPHUR_DIOXIDE = "sulphur_dioxide"
+    TEMPERATURE = "temperature"
+    VOLATILE_ORGANIC_COMPOUNDS = "volatile_organic_compounds"
+    VOLATILE_ORGANIC_COMPOUNDS_PARTS = "volatile_organic_compounds_parts"
+    VOLTAGE = "voltage"
+    VOLUME = "volume"
+    VOLUME_STORAGE = "volume_storage"
+    VOLUME_FLOW_RATE = "volume_flow_rate"
+    WATER = "water"
+    WEIGHT = "weight"
+    WIND_SPEED = "wind_speed"
+
+device_class_to_rounding: dict[DeviceClass, int] = { 
+        DeviceClass.REACTIVE_POWER: 0,
+        DeviceClass.ENERGY: 1,
+        DeviceClass.FREQUENCY: 1,
+        DeviceClass.POWER_FACTOR: 1,
+        DeviceClass.APPARENT_POWER: 0, 
+        DeviceClass.CURRENT: 1,
+        DeviceClass.VOLTAGE: 0,
+        DeviceClass.POWER: 0
+    }
+
+class HAEntityType(Enum):
+    NUMBER = 'number'
+    SWITCH = 'switch'
+    SELECT = 'select'
+
+    SENSOR = 'sensor'
+    BINARY_SENSOR = 'binary_sensor'
+
+# all parameters are required to have these fields
+ParameterReq = TypedDict(
+    "ParameterReq",
+    {
+        "addr": int,
+        "count": int,
+        "dtype": DataType,
+        "multiplier": float,
+        "unit": str,
+        "device_class": DeviceClass,
+        "register_type": RegisterTypes,
+    },
+)
+
+# inherit required parameters, add optional parameters
+class Parameter(ParameterReq, total=False):
+    remarks: str
+    state_class: Literal["measurement", "total", "total_increasing"]
+    value_template: str
+
+    # all oarameters are required to have these fields
+WriteParameterReq = TypedDict(
+    "WriteParameterReq",
+    {
+        "addr": int,
+        "count": int,
+        "dtype": DataType,
+        "multiplier": float,
+        "register_type": RegisterTypes,
+        'ha_entity_type': HAEntityType,
+    },
+)
+
+class WriteSelectParameterReq(WriteParameterReq, total=True):
+    # select
+    options: list[str] # required for select
+
+class WriteSelectParameter(WriteSelectParameterReq, total=False):
+    value_template: str
+    command_template: str
+    
+class WriteParameter(WriteParameterReq, total=False):
+    device_class: DeviceClass # when not specified w=for a switch, a none type switch is used
+
+    # number
+    unit: str
+    min: float  
+    max: float
+
+    # switch
+    payload_off: int
+    payload_on: int
+
+    
 
 if __name__ == "__main__":
     print(DataType.U16.min_value)

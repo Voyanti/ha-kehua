@@ -40,7 +40,7 @@ class Options:
     servers: list[ServerOptions]
     clients: list[Union[ModbusRTUOptions, ModbusTCPOptions]]
 
-    pause_interval_seconds: int
+    pause_interval_seconds: float
 
     sleep_over_midnight: bool
     sleep_midnight_minutes: int

@@ -1,10 +1,17 @@
+from typing import Optional
 from .enums import RegisterTypes
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
-from pymodbus.pdu import ExceptionResponse
+from pymodbus.pdu import ExceptionResponse, ModbusPDU
+from pymodbus.exceptions import ModbusIOException
 import logging
+from .options import ModbusTCPOptions, ModbusRTUOptions
 from time import sleep
 logger = logging.getLogger(__name__)
+
+# Enable pymodbus logging
+# log = logging.getLogger("pymodbus")
+# log.setLevel(logging.DEBUG)
 
 
 class Client:
@@ -37,18 +44,61 @@ class Client:
                                              stopbits=cl_options.stopbits)
 
     def read(self, address, count, slave_id, register_type):
-        if register_type == RegisterTypes.HOLDING_REGISTER:
-            result = self.client.read_holding_registers(address=address-1,
-                                                        count=count,
-                                                        slave=slave_id)
-        elif register_type == RegisterTypes.INPUT_REGISTER:
-            result = self.client.read_input_registers(address=address-1,
-                                                      count=count,
-                                                      slave=slave_id)
-        else:
-            # will maybe never happen?
-            logger.info(f"unsupported register type {register_type}")
+        """
+            Calls the appropriate read function, based on the register type (input / holding).
+
+            On ModbusIOException: wait 20s and retry
+        """
+        logger.debug(f"Reading param from {address=}, {count=} on {slave_id=}, {register_type=}")
+
+        need_result = True
+        while need_result:
+            try:
+                if register_type == RegisterTypes.HOLDING_REGISTER:
+                    result = self.client.read_holding_registers(address=address-1,
+                                                                count=count,
+                                                                slave=slave_id)
+                elif register_type == RegisterTypes.INPUT_REGISTER:
+                    result = self.client.read_input_registers(address=address-1,
+                                                            count=count,
+                                                            slave=slave_id)
+                else:
+                    logger.info(f"unsupported register type {register_type}")
+                    raise ValueError(f"unsupported register type {register_type}")
+                
+                # no IOexception:
+                need_result = False
+            except ModbusIOException as e:
+                need_result = True
+                logger.info(str(e))
+                logger.info(f"Sleep 20s and retry")
+                sleep(20)
+
+        return result
+    
+    def write(self, values: list[int], address: int, slave_id: int, register_type):
+        """Writes a list of encoded ints to 16-bit registers, 
+        starting at the 1-indexed address specified
+
+        Args:
+            values (list[int]): list of ints encoding the value
+            address (int): modbus register address (1-indexed)
+            slave_id (int): modbus slave_id
+            register_type (RegisterType): only RegisterTypes.HOLDING_REGISTER. Used for validation 
+
+        Raises:
+            ValueError: if register_type not RegisterTypes.HOLDING_REGISTER
+
+        Returns:
+            ModbusPDU: modbus client response
+        """        
+        if not register_type == RegisterTypes.HOLDING_REGISTER:
+            logger.info(f"unsupported write register type {register_type}")
             raise ValueError(f"unsupported register type {register_type}")
+        
+        result = self.client.write_registers(address=address-1,
+                                            values=values,
+                                            slave=slave_id)
         return result
 
     def connect(self, num_retries=2, sleep_interval=3) -> None:
@@ -114,18 +164,41 @@ class SpoofClient:
         fan out dictionary information, and decode/ encode register values when reading/ writing/
     """
     class SpoofResponse:
-        def __init__(self, registers: list[int]):
-            self.registers = registers
+        def __init__(self, registers: Optional[list[int]] = None):
+            if registers: self.registers = registers
 
         def isError(self): return False
 
     def __init__(self):
-        self.name = "Client1"
+        self.name = "client1"
 
     def read(self, address, count, slave_id, register_type):
-        logger.info(f"SPOOFING READ")
+        logger.debug(f"SPOOFING READ")
         response = SpoofClient.SpoofResponse([73 for _ in range(count)])
         return response
+    
+    def write(self, values: list[int], address: int, slave_id: int, register_type):
+        """Writes a list of encoded ints to 16-bit registers, 
+        starting at the 1-indexed address specified
+
+        Args:
+            values (list[int]): list of ints encoding the value
+            address (int): modbus register address (1-indexed)
+            slave_id (int): modbus slave_id
+            register_type (RegisterType): only RegisterTypes.HOLDING_REGISTER. Used for validation 
+
+        Raises:
+            ValueError: if register_type not RegisterTypes.HOLDING_REGISTER
+
+        Returns:
+            ModbusPDU: modbus client response
+        """        
+        if not register_type == RegisterTypes.HOLDING_REGISTER:
+            logger.info(f"unsupported write register type {register_type}")
+            raise ValueError(f"unsupported register type {register_type}")
+        
+        logger.info(f"Spoof Write of {values} at {address=} ({register_type=}) of {values=} on {slave_id=}")
+        return SpoofClient.SpoofResponse()
 
     def connect(self, num_retries=2, sleep_interval=3):
         logger.info(f"SPOOFING CONNECT to {self}")
