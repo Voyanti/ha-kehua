@@ -1,5 +1,5 @@
 name: "Kehua Inverter"
-version: "0.2.1"
+version: "0.2.2"
 image: ghcr.io/voyanti/ha-kehua
 slug: "ha-kehua"
 description: "Kehua Inverter"
@@ -46,7 +46,7 @@ schema:
     - name: str
       type: list(TCP|RTU)
       host: str?
-      port: str?
+      port: int?
       baudrate: int?
       bytesize: int?
       parity: bool?
