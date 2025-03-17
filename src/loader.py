@@ -30,7 +30,7 @@ def validate_names(names: list) -> None:
         raise ValueError(f"Device/ Client names must be unique")
 
     if not all([c.isalnum() for c in names]):
-        raise ValueError(f"Client names must be alphanumeric")
+        raise ValueError(f"Client and Device names must be alphanumeric")
 
 
 def validate_server_implemented(servers: list):
@@ -60,6 +60,7 @@ def read_yaml(json_rel_path):
     with open(json_rel_path) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)["options"]
     return data
+
 
 def load_options(json_rel_path="/data/options.json") -> Options:
     """Load server, client configurations and connection specs as dicts from options json."""

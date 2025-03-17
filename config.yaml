@@ -1,5 +1,6 @@
 name: "Kehua Inverter"
-version: "0.1.4"
+version: "0.1.5"
+image: ghcr.io/voyanti/ha-atess
 slug: "voyanti_kehua"
 description: "Kehua Inverter"
 init: false
@@ -9,9 +10,6 @@ url: "https://github.com/Voyanti/ha-kehua"
 arch:
   - aarch64
   - amd64
-  - armhf
-  - armv7
-  - i386
 options:
   servers:
     - name: "kehua1"
@@ -27,10 +25,10 @@ options:
   pause_interval_seconds: 10
   sleep_over_midnight: true
   sleep_midnight_minutes: 10
-  # mqtt_host: "localhost"
-  # mqtt_port: 1884
-  mqtt_host: "core-mosquitto"
-  mqtt_port: 1883
+  mqtt_host: "localhost"
+  mqtt_port: 1884
+  # mqtt_host: "core-mosquitto"
+  # mqtt_port: 1883
   mqtt_user: "mqtt"
   mqtt_password: "mqtt-users"
   mwtt_ha_discovery_topic: "homeassistant"
@@ -42,16 +40,18 @@ schema:
       server_type: list(KEHUA_INVERTER)
       connected_client: str
       modbus_id: int(0,255)
+      # PT: int?
+      # CT: int?
   clients:
     - name: str
       type: list(TCP|RTU)
       host: str?
-      port: int?
+      port: str?
       baudrate: int?
       bytesize: int?
       parity: bool?
       stopbits: int?
-  pause_interval_seconds: int
+  pause_interval_seconds: float
   sleep_over_midnight: bool
   sleep_midnight_minutes: int
   mqtt_host: str

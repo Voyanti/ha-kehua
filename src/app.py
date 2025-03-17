@@ -9,7 +9,7 @@ from .options import Options
 from .client import Client
 from .implemented_servers import ServerTypes
 from .server import Server
-from .modbus_mqtt import MqttClient, RECV_Q
+from .modbus_mqtt import MqttClient
 from paho.mqtt.enums import MQTTErrorCode
 from paho.mqtt.client import MQTTMessage
 
@@ -18,12 +18,12 @@ import sys
 logging.basicConfig(
     level=logging.INFO,  # Set logging level
     # Format with timestamp
-    format="%(asctime)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",  # Date format
 )
 logger = logging.getLogger(__name__)
 
-READ_INTERVAL = 0.001
+READ_INTERVAL = 0.004
 
 
 def exit_handler(
@@ -39,6 +39,17 @@ def exit_handler(
 
     mqtt_client.loop_stop()
 
+def test_different_batch_sizes(client0: Client):
+    from .enums import RegisterTypes
+    import time
+    count = 125
+    logger.info(f"\n{count=}")
+    start = time.time()
+    result = client0.read(1, count, 1, RegisterTypes.INPUT_REGISTER)
+    if result.isError():
+        client0._handle_error_response(result)
+        raise Exception(f"Error reading registers")
+    logger.info(f"done. elapsed time: {time.time()-start},\n{result.registers}\n")
 
 class App:
     def __init__(self, client_instantiator_callback, server_instantiator_callback, options_rel_path=None) -> None:
@@ -61,11 +72,11 @@ class App:
         self.sleep_if_midnight()
 
         logger.info("Instantiate clients")
-        self.clients = self.client_instantiator_callback(self.OPTIONS)
+        self.clients: list[Client]= self.client_instantiator_callback(self.OPTIONS)
         logger.info(f"{len(self.clients)} clients set up")
 
         logger.info("Instantiate servers")
-        self.servers = self.server_instantiator_callback(
+        self.servers: list[Server] = self.server_instantiator_callback(
             self.OPTIONS, self.clients)
         logger.info(f"{len(self.servers)} servers set up")
         # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
@@ -79,6 +90,7 @@ class App:
 
         # Setup MQTT Client
         self.mqtt_client = MqttClient(self.OPTIONS)
+        self.mqtt_client.servers = self.servers
         succeed: MQTTErrorCode = self.mqtt_client.connect(
             host=self.OPTIONS.mqtt_host, port=self.OPTIONS.mqtt_port
         )
@@ -105,13 +117,25 @@ class App:
         # every read_interval seconds, read the registers and publish to mqtt
         while True:
             for server in self.servers:
-                for register_name, details in server.parameters().items():
-                    sleep(READ_INTERVAL)
-                    value = server.read_registers(register_name)
+                # update server state from modbus
+                server.read_batches()
+
+                # index required registers from saved state
+                # publish to ha
+                for register_name in server.write_parameters:
+                    value = server.read_from_state(register_name)
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
-                logger.info(
-                    f"Published all parameter values for {server.name=}")
+                    
+                logger.info(f"Published all Write parameter values for {server.name}")
+                sleep(READ_INTERVAL)
+
+                for register_name in server.parameters:
+                    value = server.read_from_state(register_name)
+                    self.mqtt_client.publish_to_ha(
+                        register_name, value, server)
+                logger.info(f"Published all Read parameter values for {server.name}")
+            logger.info("")
 
             if loop_once:
                 break
@@ -133,6 +157,7 @@ class App:
 
             if not (is_before_midnight or is_after_midnight):
                 break
+            logger.info(f"Sleeping over midnight")
 
             # Calculate appropriate sleep duration
             if is_before_midnight:
@@ -163,11 +188,24 @@ def instantiate_servers(OPTIONS: Options, clients: list[Client]) -> list[Server]
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:   # running locally
+    if len(sys.argv) <= 1:  # deployed on homeassistant
+        app = App(instantiate_clients, instantiate_servers)
+        app.setup()
+        app.connect()
+        app.loop()
+    else:                   # running locally
+        logging.basicConfig(
+            level=logging.DEBUG,  # Set logging level
+            # Format with timestamp
+            format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",  # Date format
+)
+        
         from .client import SpoofClient
         app = App(instantiate_clients, instantiate_servers, sys.argv[1])
         app.OPTIONS.mqtt_host = "localhost"
         app.OPTIONS.mqtt_port = 1884
+        app.OPTIONS.pause_interval_seconds = 10
 
         def instantiate_spoof_clients(Options) -> list[SpoofClient]:
             return [SpoofClient()]
@@ -183,11 +221,6 @@ if __name__ == "__main__":
             s.connect = lambda: None
         app.connect()
         app.loop(True)
-    else:                   # deployed on homeassistant
-        app = App(instantiate_clients, instantiate_servers)
-        app.setup()
-        app.connect()
-        app.loop()
 
     # finally:
     #     exit_handler(servers, clients, mqtt_client)

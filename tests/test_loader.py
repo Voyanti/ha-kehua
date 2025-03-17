@@ -24,17 +24,22 @@ class TestLoaders(unittest.TestCase):
 
     # Loader
     def test_loader(self):
-        """TODO Maybe not reading the specified path.."""
-        self.assertIsInstance(load_options(json_rel_path=self.yaml_path), Options)
+        """
+        TODO Maybe not reading the specified path.."""
+        self.assertIsInstance(load_options(
+            json_rel_path=self.yaml_path), Options)
 
     # Load and Validate
     def test_load_validate(self):
-        """ Test passing of arguments from options to validaters. """
-        self.assertIsInstance(load_validate_options(json_rel_path=self.yaml_path), Options)
+        """
+        Test passing of arguments from options to validaters. """
+        self.assertIsInstance(load_validate_options(
+            json_rel_path=self.yaml_path), Options)
 
     # Implemented Server Validator
     def test_validate_server_implemented(self):
-        """Tests that the server name set in config.yaml/.json is implemented and defined in implemented_servers.py
+        """
+        Tests that the server name set in config.yaml/.json is implemented and defined in implemented_servers.py
         Assumes load_options works"""
         try:
             OPTS = load_options(self.yaml_path)

@@ -1,15 +1,18 @@
+#!/bin/bash
 echo ""
 
 echo "LOCAL Start Mosquitto in the background"
 echo ""
 mosquitto -p 1884 -d
-MOSQUITTO_PID=$!
+# MOSQUITTO_PID=$!
 
 echo "Hello Kehua"
 echo "---"
 
-python3 -m src.app data/options.yaml
+python3 -m src.app config.yaml
 
+echo "sleep"
+sleep 3
 echo "LOCAL Stop Mosquitto"
 echo ""
-kill $MOSQUITTO_PID
+kill $(pgrep -f "mosquitto -p 1884")

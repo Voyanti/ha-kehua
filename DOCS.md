@@ -23,7 +23,7 @@ Each server should be defined as
 ```
 
 - `name` is used to create the HA entity unique_id, and device name. Use alphanumeric characters only. Keep it unique.
-- `serialnum` not functional for Paneltrack meters. For bookkeeping purposes.
+- `serialnum` is verified upon add-on startup.
 - `server_type` is used to select the class of server to instantiate. This add-on supports only PANELTRACK.
 - `connected_client` specifies on which client bus (abstraction of serial port or tcp ip) the server is connected. Most systems use a single client.
 - `modbus_id`: Modbus slave address of the device/server.

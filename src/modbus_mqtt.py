@@ -2,18 +2,19 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 import json
 import logging
+
+from .helpers import slugify
 from .loader import Options
-from typing import Optional
 
 from random import getrandbits
 from time import time, sleep
 from queue import Queue
 
-logger = logging.getLogger(__name__)
-RECV_Q: Queue = Queue()
+from .enums import HAEntityType
 
-def slugify(text):
-    return text.replace(' ', '_').replace('(', '').replace(')', '').replace('/', 'OR').replace('&', ' ').replace(':', '').replace('.', '').lower()
+logger = logging.getLogger(__name__)
+# RECV_Q: Queue = Queue()
+
 
 
 class MqttClient(mqtt.Client):
@@ -48,16 +49,40 @@ class MqttClient(mqtt.Client):
 
         def on_message(client, userdata, message):
             logger.info("Received message on MQTT")
-            sleep(0.01)
-            RECV_Q.put(message)                         # thread-safe
+            self.message_handler(message)
 
         self.on_connect = on_connect
         self.on_disconnect = on_disconnect
         self.on_message = on_message
 
-    def publish_discovery_topics(self, server, unique_id_base: Optional[str] = None):
+    def message_handler(self, msg) -> None:
+        """
+            Writes appropriate server registers for each message in mqtt receive queue
+        """
+        # command_topic = f"{self.base_topic}/{server.nickname}/{slugify(register_name)}/set"
+        server_ha_display_name: str = msg.topic.split('/')[1]
+        s = None
+        for s in self.servers: 
+            if s.name == server_ha_display_name:
+                server = s
+        if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
+        register_slug: str = msg.topic.split('/')[2]
+        value: str = msg.payload.decode('utf-8')
+        register_name = server.write_parameters_slug_to_name[register_slug]
+
+
+        server.write_registers(register_slug, value)
+
+
+        value = server.read_registers(register_name)
+        logger.info(f"read {value=}")
+        self.publish_to_ha(
+            register_slug, value, server)
+
+    def publish_discovery_topics(self, server) -> None:
         while not self.is_connected():
-            logger.info(f"Not connected to mqtt broker yet, sleep 100ms and retry. Before publishing discovery topics.")
+            logger.info(
+                f"Not connected to mqtt broker yet, sleep 100ms and retry. Before publishing discovery topics.")
             sleep(0.1)
 
         # TODO check if more separation from server is necessary/ possible
@@ -81,7 +106,7 @@ class MqttClient(mqtt.Client):
         # assume registers in server.registers
         availability_topic = f"{self.base_topic}_{nickname}/availability"
 
-        parameters = server.parameters()
+        parameters = server.parameters
 
         for register_name, details in parameters.items():
             state_topic = f"{self.base_topic}/{nickname}/{slugify(register_name)}/state"
@@ -91,12 +116,13 @@ class MqttClient(mqtt.Client):
                 "state_topic": state_topic,
                 "availability_topic": availability_topic,
                 "device": device,
-                "device_class": details["device_class"],
-                "unit_of_measurement": details["unit"],
+                "device_class": details["device_class"].value,
             }
-            
-            # support overwriting unique_id for backwards compatibility with previous add-on voyanti-kehua
-            if unique_id_base is not None: discovery_payload["unique_id"] = f"{unique_id_base}_{slugify(register_name)}"
+            if details["unit"] != "":
+                discovery_payload.update(unit_of_measurement=details["unit"])
+            if "value_template" in details: #enum
+                discovery_payload.update(value_template=details["value_template"])
+
             state_class = details.get("state_class", False)
             if state_class:
                 discovery_payload['state_class'] = state_class
@@ -107,21 +133,39 @@ class MqttClient(mqtt.Client):
 
         self.publish_availability(True, server)
 
-        # for register_name, details in server.write_parameters.items():
-        #     discovery_payload = {
-        #         "name": register_name,
-        #         "unique_id": f"{nickname}_{slugify(register_name)}",
-        #         "command_topic": f"{self.base_topic}/{nickname}/{slugify(register_name)}/set",
-        #         "unit_of_measurement": details["unit"],
-        #         "availability_topic": availability_topic,
-        #         "device": device
-        #     }
-            
-        #     # support overwriting unique_id for backwards compatibility with previous add-on voyanti-kehua
-        #     if unique_id_base is not None: discovery_payload["unique_id"] = f"{unique_id_base}_{slugify(register_name)}"
+        for register_name, details in server.write_parameters.items():
+            item_topic = f"{self.base_topic}/{nickname}/{slugify(register_name)}"
+            discovery_payload = {
+                # required
+                "command_topic": item_topic + f"/set", 
+                "state_topic": item_topic + f"/state",
+                # optional
+                "name": register_name,
+                "unique_id": f"{nickname}_{slugify(register_name)}",
+                # "unit_of_measurement": details["unit"],
+                "availability_topic": availability_topic,
+                "device": device,
+                "device_class": details["device_class"],
+                "unit_of_measurement": details["unit"],
+            }
+            if details.get("unit") is not None:
+                discovery_payload.update(unit_of_measurement=details["unit"])
+            if details.get("options") is not None:
+                discovery_payload.update(options=details["options"])
+                if details.get("value_template") is not None:
+                    discovery_payload.update(value_template=details["value_template"])
+                if details.get("command_template") is not None:
+                    discovery_payload.update(command_template=details["command_template"])
+            if details.get("min") is not None and details.get("max") is not None:
+                discovery_payload.update(min=details["min"], max=details["max"])
+            if details.get("payload_off") is not None and details.get("payload_on") is not None:
+                discovery_payload.update(payload_off=details["payload_off"], payload_on=details["payload_on"])
 
-        #     discovery_topic = f"{self.ha_discovery_topic}/number/{nickname}/{slugify(register_name)}/config"
-        #     self.publish(discovery_topic, json.dumps(discovery_payload), retain=True)
+            discovery_topic = f"{self.ha_discovery_topic}/{details['ha_entity_type'].value}/{nickname}/{slugify(register_name)}/config"
+            self.publish(discovery_topic, json.dumps(discovery_payload), retain=True)
+
+            # subscribe to write topics
+            self.subscribe(discovery_payload["command_topic"])
 
     def publish_to_ha(self, register_name, value, server):
         nickname = server.name
