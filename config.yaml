@@ -1,5 +1,5 @@
 name: "Kehua Inverter"
-version: "0.1.5"
+version: "0.2.0"
 image: ghcr.io/voyanti/ha-atess
 slug: "voyanti_kehua"
 description: "Kehua Inverter"
@@ -15,10 +15,10 @@ options:
     - name: "kehua1"
       serialnum: "unknown"
       server_type: "KEHUA_INVERTER"
-      connected_client: "Client1"
+      connected_client: "client1"
       modbus_id: 1  # default for kehua?
   clients:
-    - name: "Client1"
+    - name: "client1"
       type: "TCP"
       host: "192.168.1.91"
       port: 502

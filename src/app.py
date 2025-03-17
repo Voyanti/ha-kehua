@@ -219,8 +219,14 @@ if __name__ == "__main__":
         app.setup()
         for s in app.servers:
             s.connect = lambda: None
+            s.read_model()
+            s.model = "BCS500K-A"
+            s.setup_valid_registers_for_model()
+            s.find_register_extent()
+            s.create_batches()
         app.connect()
-        app.loop(True)
+
+        app.loop(False)
 
     # finally:
     #     exit_handler(servers, clients, mqtt_client)

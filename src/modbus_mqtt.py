@@ -95,8 +95,8 @@ class MqttClient(mqtt.Client):
 
         logger.info(f"Publishing discovery topics for {nickname}")
         device = {
-            "manufacturer": server.manufacturer(),
-            "model": server.model(),
+            "manufacturer": server.manufacturer,
+            "model": server.model,
             "identifiers": [f"{nickname}"],
             "name": f"{nickname}"
             # "name": f"{server.manufacturer} {server.serialnum}"
@@ -145,8 +145,6 @@ class MqttClient(mqtt.Client):
                 # "unit_of_measurement": details["unit"],
                 "availability_topic": availability_topic,
                 "device": device,
-                "device_class": details["device_class"],
-                "unit_of_measurement": details["unit"],
             }
             if details.get("unit") is not None:
                 discovery_payload.update(unit_of_measurement=details["unit"])
