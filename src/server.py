@@ -10,9 +10,6 @@ from .options import ServerOptions
 
 logger = logging.getLogger(__name__)
 
-Parameter = TypedDict("Parameter", {'addr': int, 'count': int, 'dtype': DataType,
-                      'multiplier': int, 'unit': str, 'device_class': str, 'register_type': RegisterTypes})
-
 class Server(ABC):
     """
     Base server class. Represents modbus server: its name, serial, model, modbus slave_id. e.g. SungrowInverter(Server).
@@ -54,7 +51,7 @@ class Server(ABC):
 
     @property
     @abstractmethod
-    def write_parameters(self) -> dict[str, WriteParameter]:
+    def write_parameters(self) -> dict[str, WriteParameter | WriteSelectParameter]:
         """ Return a dictionary of WriteParameter names and WriteParameter objects."""
 
     @property
@@ -113,16 +110,16 @@ class Server(ABC):
 
 
         # account for last item count: meaning the largest address needs to be incremented
-        if holding_params[-1][1]["count"] != 1:
+        if holding_params and holding_params[-1][1]["count"] != 1:
             holding_addrs.append(holding_params[-1][1]["count"] - 1 + holding_params[-1][1]["addr"])
-        if input_params[-1][1]["count"] != 1:
+        if input_params and input_params[-1][1]["count"] != 1:
             input_addrs.append(input_params[-1][1]["count"] - 1 + input_params[-1][1]["addr"])
 
         logger.info(f"{holding_addrs=}")
         logger.info(f"{input_addrs=}")
 
         # save min (offset) for internal state
-        self.holding_addr_extent = (min(holding_addrs), max(holding_addrs))
+        self.holding_addr_extent = (min(holding_addrs), max(holding_addrs))     # TODO assumes there are both holding and input registers defined. maybe ensure this assumption holds as it is a valid one
         self.input_addr_extent = (min(input_addrs), max(input_addrs))
         logger.info(f"{self.holding_addr_extent=}")
         logger.info(f"{self.input_addr_extent=}")
@@ -395,6 +392,7 @@ class Server(ABC):
 
         try:
             clients_names = [str(client) for client in clients]
+            logger.info(f"{clients_names}")
             idx = clients_names.index(opts.connected_client)  # TODO ugly
         except ValueError:
             raise ValueError(
