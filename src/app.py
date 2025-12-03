@@ -277,7 +277,7 @@ if __name__ == "__main__":
         @final
         class SpoofDeviceInstantiator(RealDeviceInstantiator):
             @staticmethod
-            def instantiate_clients(Options) -> list[SpoofClient]:
+            def instantiate_clients(OPTIONS) -> list[SpoofClient]:
                     return [SpoofClient()]
 
         device_instantiator = SpoofDeviceInstantiator()

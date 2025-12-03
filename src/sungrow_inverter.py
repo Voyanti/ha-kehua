@@ -649,6 +649,10 @@ class SungrowInverter(Server):
         0x2C2D: {'model': 'SG125CX-P2', 
                     'mppt': 12, 
                     'string_per_mppt': 2},
+        11351: {
+            'model': 'SG150CX',
+                    'mppt': 7, 
+                    'string_per_mppt': 3},
     }
     # device_info = {
     #     # TODO what are power limited ranges in appendix 6

@@ -217,7 +217,7 @@ class Server(ABC):
         else:
             modbus_id = self.modbus_id
         register_type = param["register_type"]
-        unit = param["unit"]
+        unit = param.get("unit")
 
         if param["ha_entity_type"] == HAEntityType.SWITCH:
             value = int(value, base=0) # interpret string as integer literal. supports auto detecting base
