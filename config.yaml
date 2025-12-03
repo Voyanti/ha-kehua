@@ -1,5 +1,5 @@
 name: "Sungrow Inverter"
-version: "0.4.80"
+version: "0.4.81"
 image: ghcr.io/voyanti/ha-sungrow
 slug: "ha-sungrow"
 description: "Sungrow Inverter Prebuilt"

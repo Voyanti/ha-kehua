@@ -734,7 +734,7 @@ class SungrowInverter(Server):
         # self.manufacturer = "Sungrow"
         self._parameters = dict.copy(self.input_registers)
 
-        self._supported_models = ('SG110CX', 'SG33CX', 'SG80KTL-20', 'SG50CX', 'SG125CX-P2', 'SG33CX-P2') 
+        self._supported_models = ('SG110CX', 'SG33CX', 'SG80KTL-20', 'SG50CX', 'SG125CX-P2', 'SG33CX-P2', 'SG150CX') 
         self._manufacturer = "Sungrow"
         self.device_info = SungrowInverter.device_info
 
