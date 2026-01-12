@@ -56,11 +56,11 @@ class Client:
                 if register_type == RegisterTypes.HOLDING_REGISTER:
                     result = self.client.read_holding_registers(address=address-1,
                                                                 count=count,
-                                                                slave=slave_id)
+                                                                device_id=slave_id)
                 elif register_type == RegisterTypes.INPUT_REGISTER:
                     result = self.client.read_input_registers(address=address-1,
                                                             count=count,
-                                                            slave=slave_id)
+                                                            device_id=slave_id)
                 else:
                     logger.info(f"unsupported register type {register_type}")
                     raise ValueError(f"unsupported register type {register_type}")
@@ -98,7 +98,7 @@ class Client:
         
         result = self.client.write_registers(address=address-1,
                                             values=values,
-                                            slave=slave_id)
+                                            device_id=slave_id)
         
         if result.isError():
             self._handle_error_response(result)

@@ -49,6 +49,6 @@ class AppOptions:
     mqtt_port: int
     mqtt_user: str
     mqtt_password: str
-    mwtt_ha_discovery_topic: str
+    mqtt_ha_discovery_topic: str
     mqtt_base_topic: str
     mqtt_reconnect_attempts: int

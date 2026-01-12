@@ -38,7 +38,7 @@ class MqttClient(mqtt.Client):
         super().__init__(CallbackAPIVersion.VERSION2, f"modbus-{uuid}")
         self.username_pw_set(options.mqtt_user, options.mqtt_password)
         self.base_topic = options.mqtt_base_topic
-        self.ha_discovery_topic = options.mwtt_ha_discovery_topic
+        self.ha_discovery_topic = options.mqtt_ha_discovery_topic
 
         def on_connect(client, userdata, connect_flags, reason_code, properties):
             if reason_code == 0:
