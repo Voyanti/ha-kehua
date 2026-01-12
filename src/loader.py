@@ -29,7 +29,7 @@ def validate_names(names: list) -> None:
     if len(set(names)) != len(names):
         raise ValueError(f"Device/ Client names must be unique")
 
-    if not all([c.isalnum() for c in names]):
+    if not all([c.isalnum() or c == "-" for name in names for c in name]):
         raise ValueError(f"Client and Device names must be alphanumeric")
 
 
@@ -77,6 +77,8 @@ def load_options(json_rel_path="/data/options.json") -> AppOptions:
             data = read_json(json_rel_path)
         elif json_rel_path[-4:] == "yaml":
             data = read_yaml(json_rel_path)
+        else:
+            raise RuntimeError(f"Unsupported filetype {json_rel_path}")
     else:
         logger.info("ConfigLoader error")
         logger.info(os.path.join(os.getcwd(), json_rel_path))

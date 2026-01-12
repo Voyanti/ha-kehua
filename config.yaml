@@ -1,11 +1,13 @@
 name: "Kehua Inverter"
-version: "0.2.3"
+version: "0.2.4"
 image: ghcr.io/voyanti/ha-kehua
 slug: "ha-kehua"
 description: "Kehua Inverter"
 init: false
 startup: application
 boot: auto
+uart: true
+usb: true
 url: "https://github.com/Voyanti/ha-kehua"
 arch:
   - aarch64
@@ -16,7 +18,7 @@ options:
       serialnum: "unknown"
       server_type: "KEHUA_INVERTER"
       connected_client: "client1"
-      modbus_id: 1  # default for kehua?
+      modbus_id: 1 # default for kehua?
   clients:
     - name: "client1"
       type: "TCP"
@@ -31,7 +33,7 @@ options:
   # mqtt_port: 1883
   mqtt_user: "mqtt"
   mqtt_password: "mqtt-users"
-  mwtt_ha_discovery_topic: "homeassistant"
+  mqtt_ha_discovery_topic: "homeassistant"
   mqtt_base_topic: "modbus"
   mqtt_reconnect_attempts: 3
 schema:
@@ -60,6 +62,6 @@ schema:
   mqtt_port: port
   mqtt_user: str
   mqtt_password: password
-  mwtt_ha_discovery_topic: str
+  mqtt_ha_discovery_topic: str
   mqtt_base_topic: str
   mqtt_reconnect_attempts: int
