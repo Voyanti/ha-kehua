@@ -1,10 +1,13 @@
+import os
+import signal
+from typing import Callable
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 import json
 import logging
 
 from .helpers import slugify
-from .loader import Options
+from .options import AppOptions
 
 from random import getrandbits
 from time import time, sleep
@@ -21,7 +24,7 @@ class MqttClient(mqtt.Client):
     """
         paho MQTT abstraction for home assistant
     """
-    def __init__(self, options: Options) -> None:
+    def __init__(self, options: AppOptions) -> None:
         def generate_uuid():
             random_part = getrandbits(64)
             # Get current timestamp in milliseconds
@@ -44,47 +47,31 @@ class MqttClient(mqtt.Client):
                 logger.info(
                     f"Not connected to MQTT broker.\nReturn code: {reason_code=}")
 
-        def on_disconnect(client, userdata, message):
-            logger.info("Disconnected from MQTT broker")
+        def on_disconnect(client,
+                        userdata,
+                        disconnect_flags,
+                        reason,
+                        properties):
+            logger.error(f"Disconnected from MQTT broker, {reason=}\n{disconnect_flags=}\n{properties=}")
+            logger.info(f"Stopping all threads")
+            os.kill(os.getpid(), signal.SIGINT)
 
         def on_message(client, userdata, message):
             logger.info("Received message on MQTT")
-            self.message_handler(message)
+            try: 
+                self.message_handler(msg.topic, msg.payload.decode('utf-8'))
+
+            except Exception as e:
+                logger.error(f"Exception while handling received message. Stop Process. \n {e}")
+                os.kill(os.getpid(), signal.SIGINT)
 
         self.on_connect = on_connect
         self.on_disconnect = on_disconnect
         self.on_message = on_message
 
-    def message_handler(self, msg) -> None:
-        """
-            Writes appropriate server registers for each message in mqtt receive queue
-        """
-        # command_topic = f"{self.base_topic}/{server.nickname}/{slugify(register_name)}/set"
-        server_ha_display_name: str = msg.topic.split('/')[1]
-        s = None
-        for s in self.servers: 
-            if s.name == server_ha_display_name:
-                server = s
-        if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
-        register_slug: str = msg.topic.split('/')[2]
-        value: str = msg.payload.decode('utf-8')
-        register_name = server.write_parameters_slug_to_name[register_slug]
-
-
-        server.write_registers(register_slug, value)
-
-
-        value = server.read_registers(register_name)
-        logger.info(f"read {value=}")
-        self.publish_to_ha(
-            register_slug, value, server)
+        self.message_handler = Callable[[str, str], None]
 
     def publish_discovery_topics(self, server) -> None:
-        while not self.is_connected():
-            logger.info(
-                f"Not connected to mqtt broker yet, sleep 100ms and retry. Before publishing discovery topics.")
-            sleep(0.1)
-
         # TODO check if more separation from server is necessary/ possible
         nickname = server.name
         if not server.model or not server.manufacturer or not server.serial or not nickname or not server.parameters:
@@ -116,16 +103,19 @@ class MqttClient(mqtt.Client):
                 "state_topic": state_topic,
                 "availability_topic": availability_topic,
                 "device": device,
-                "device_class": details["device_class"].value,
+                # "device_class": details["device_class"].value,
             }
+            if details["device_class"] is not None:
+                discovery_payload["device_class"] = details["device_class"].value
             if details["unit"] != "":
                 discovery_payload.update(unit_of_measurement=details["unit"])
-            if "value_template" in details: #enum
-                discovery_payload.update(value_template=details["value_template"])
-
             state_class = details.get("state_class", False)
             if state_class:
                 discovery_payload['state_class'] = state_class
+                
+            if details.get("value_template") is not None:
+                discovery_payload.update(value_template=details["value_template"])
+                
             discovery_topic = f"{self.ha_discovery_topic}/sensor/{nickname}/{slugify(register_name)}/config"
 
             self.publish(discovery_topic, json.dumps(
@@ -168,10 +158,27 @@ class MqttClient(mqtt.Client):
     def publish_to_ha(self, register_name, value, server):
         nickname = server.name
         state_topic = f"{self.base_topic}/{nickname}/{slugify(register_name)}/state"
-        self.publish(state_topic, value)  # , retain=True)
+        msg_info = self.publish(state_topic, value, qos=1)  # , retain=True)
+            
 
     def publish_availability(self, avail, server):
         nickname = server.name
         availability_topic = f"{self.base_topic}_{nickname}/availability"
-        self.publish(availability_topic,
-                     "online" if avail else "offline", retain=True)
+        msg_info = self.publish(availability_topic,
+                     "online" if avail else "offline", qos=1, retain=True)
+        
+
+    def ensure_connected(self, max_attempts: int = 3) -> None:
+        """Block while not connected to the broker. Retry every second, for _max_attempts_, before stopping the process.
+        """ 
+        attempt_num = 1
+
+        while not self.is_connected():
+            if attempt_num > max_attempts:
+                logger.info(f"Not connected to mqtt broker after {max_attempts=}. Kill process")
+                os.kill(os.getpid(), signal.SIGINT)
+
+            logger.info(f"Not connected to mqtt broker, sleep 1s and retry. {attempt_num=}")
+
+            sleep(1)
+        logger.info(f"Connected to MQTT broker")

@@ -2,7 +2,7 @@ attrs==24.3.0
 cattrs==24.1.2
 exceptiongroup==1.2.2
 paho-mqtt==2.1.0
-pymodbus==3.8.3
+pymodbus==3.11
 pyserial==3.5
 PyYAML==6.0.2
 typing_extensions==4.12.2
