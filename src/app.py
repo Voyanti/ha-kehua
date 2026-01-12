@@ -1,11 +1,15 @@
+from abc import ABC, abstractmethod
+import os
+import signal
 from time import sleep
 from datetime import datetime, timedelta
 import atexit
 import logging
 from queue import Queue
+from typing import final
 
 from .loader import load_validate_options
-from .options import Options
+from .options import AppOptions
 from .client import Client
 from .implemented_servers import ServerTypes
 from .server import Server
@@ -37,49 +41,124 @@ def exit_handler(
     for client in modbus_clients:
         client.close()
 
-    mqtt_client.loop_stop()
+    # messages.wait_for_publish()
+    mqtt_client.loop_stop() # doesn't guarentee that all messages are published
 
-def test_different_batch_sizes(client0: Client):
-    from .enums import RegisterTypes
-    import time
-    count = 125
-    logger.info(f"\n{count=}")
-    start = time.time()
-    result = client0.read(1, count, 1, RegisterTypes.INPUT_REGISTER)
-    if result.isError():
-        client0._handle_error_response(result)
-        raise Exception(f"Error reading registers")
-    logger.info(f"done. elapsed time: {time.time()-start},\n{result.registers}\n")
+class MessageHandler:
+    def __init__(self, servers: list[Server], mqtt_client: MqttClient):
+        self.devices = servers
+        self.mqtt_client = mqtt_client
+
+    def _decode_subscribed_topic(self, msg_topic: str) -> tuple[Server, str]:
+        """
+            Finds the implicated device and its register, by MQTT message topic.
+
+        Args:
+            msg_topic (str): topic of the incoming message (usually a command_topic)
+
+        Raises:
+            ValueError: If the command_topic format does not match any of the defined devices
+
+        Returns:
+            tuple[str, str]: _description_
+        """
+        # command_topic = f"{self.base_topic}/{server.nickname}/{slugify(register_name)}/set"
+        server_ha_display_name: str = msg_topic.split('/')[1]
+        s = None
+        for s in self.devices: 
+            if s.name == server_ha_display_name:
+                device = s
+        if s is None: raise ValueError(f"Server {server_ha_display_name} not available. Cannot write.")
+        register_name: str = msg_topic.split('/')[2]
+
+        return (device, register_name)
+
+    def decode_and_write(self, msg_topic: str, msg_payload_decoded: str) -> None:
+        """
+            Finds implied register from topic, writes and updates entity state by a read back.
+        """
+        # find implied register from topic
+        server, register_name = self._decode_subscribed_topic(msg_topic)
+
+        # write
+        server.write_registers(register_name, msg_payload_decoded)
+
+        # update state by read back
+        value = server.read_registers(server.write_parameters_slug_to_name[register_name])
+        logger.info(f"Read back after write attempt {value=}")
+        self.mqtt_client.publish_to_ha(
+            register_name, value, server)
+    
+class IDeviceInstantiatorCallbacks(ABC):
+    @staticmethod
+    @abstractmethod
+    def instantiate_clients(OPTIONS: AppOptions) -> list[Client]:
+        """ Callback function that creates a list of Client objects from OPTIONS.clients
+
+        Args:
+            OPTIONS (AppOptions): AppOptions dataclass containing client configuration
+
+        Returns:
+            list[Client]: list of Clients or spoofed Clients
+        """  
+
+    @staticmethod
+    @abstractmethod
+    def instantiate_servers(OPTIONS: AppOptions, clients: list[Client]) -> list[Server]:
+        """ Callback function that creates a list of Server objects from OPTIONS.servers
+
+        Args:
+            OPTIONS (AppOptions): AppOptions dataclass containing servers configuration
+            clients (list[Client]): list of Clients or spoofed Clients
+
+        Returns:
+            list[Server]: list of Servers
+        """
+        
+class RealDeviceInstantiator(IDeviceInstantiatorCallbacks):
+    @staticmethod
+    def instantiate_clients(OPTIONS: AppOptions) -> list[Client]:
+        return [Client(cl_options) for cl_options in OPTIONS.clients]
+
+    @staticmethod
+    def instantiate_servers(OPTIONS: AppOptions, clients: list[Client]) -> list[Server]:
+        return [
+            ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients)
+            for sr in OPTIONS.servers
+        ]
+    
+
 
 class App:
-    def __init__(self, client_instantiator_callback, server_instantiator_callback, options_rel_path=None) -> None:
-        self.OPTIONS: Options
+    def __init__(self, device_instantiator: IDeviceInstantiatorCallbacks, message_handler_instantiator: type[MessageHandler], options_rel_path=None) -> None:
         # Read configuration
         if options_rel_path:
             self.OPTIONS = load_validate_options(options_rel_path)
         else:
             self.OPTIONS = load_validate_options()
 
-        self.midnight_sleep_enabled, self.minutes_wakeup_after = self.OPTIONS.sleep_over_midnight, self.OPTIONS.sleep_midnight_minutes
+        self.midnight_sleep_enabled, self.minutes_wakeup_after = self.OPTIONS.midnight_sleep_enabled, self.OPTIONS.midnight_sleep_wakeup_after
         self.pause_interval = self.OPTIONS.pause_interval_seconds
         # midnight_sleep_enabled=True, minutes_wakeup_after=5
 
         # Setup callbacks
-        self.client_instantiator_callback = client_instantiator_callback
-        self.server_instantiator_callback = server_instantiator_callback
+        self.device_instantiator = device_instantiator
+        self.message_handler_instantiator = message_handler_instantiator
+        
 
     def setup(self) -> None:
         self.sleep_if_midnight()
 
         logger.info("Instantiate clients")
-        self.clients: list[Client]= self.client_instantiator_callback(self.OPTIONS)
+        self.clients: list[Client]= self.device_instantiator.instantiate_clients(self.OPTIONS)
         logger.info(f"{len(self.clients)} clients set up")
 
         logger.info("Instantiate servers")
-        self.servers: list[Server] = self.server_instantiator_callback(
+        self.servers: list[Server] = self.device_instantiator.instantiate_servers(
             self.OPTIONS, self.clients)
         logger.info(f"{len(self.servers)} servers set up")
         # if len(servers) == 0: raise RuntimeError(f"No supported servers configured")
+
 
     def connect(self) -> None:
         for client in self.clients:
@@ -89,20 +168,38 @@ class App:
             server.connect()
 
         # Setup MQTT Client
+        logger.info(f"Connecting to MQTT broker")
         self.mqtt_client = MqttClient(self.OPTIONS)
-        self.mqtt_client.servers = self.servers
-        succeed: MQTTErrorCode = self.mqtt_client.connect(
-            host=self.OPTIONS.mqtt_host, port=self.OPTIONS.mqtt_port
-        )
-        if succeed.value != 0:
-            logger.info(
-                f"MQTT Connection error: {succeed.name}, code {succeed.value}")
+        self.mqtt_client.connect_timeout = 20
+
+        for i in range(2):
+            try: 
+                succeed: MQTTErrorCode = self.mqtt_client.connect(
+                    host=self.OPTIONS.mqtt_host, port=self.OPTIONS.mqtt_port
+                )
+                if succeed.value != 0:
+                    logger.info(
+                        f"MQTT Connection error: {succeed.name}, code {succeed.value}")
+                    
+            # except ConnectionRefusedError as con_err:
+            #     logger.error(f"Connection refused. Sleep 1 min and retry")
+            #     sleep(60)
+            except Exception as e:
+                logger.error(f"{e} \n\n Sleep 1 min and retry mqtt connection")
+                sleep(60)
+
+        
+        self.message_handler = self.message_handler_instantiator(self.servers, self.mqtt_client)
+        self.mqtt_client.message_handler = self.message_handler.decode_and_write
 
         atexit.register(exit_handler, self.servers,
                         self.clients, self.mqtt_client)
 
         sleep(READ_INTERVAL)
         self.mqtt_client.loop_start()
+        sleep(READ_INTERVAL)
+
+        self.mqtt_client.ensure_connected(self.OPTIONS.mqtt_reconnect_attempts)
 
         # Publish Discovery Topics
         for server in self.servers:
@@ -116,28 +213,24 @@ class App:
 
         # every read_interval seconds, read the registers and publish to mqtt
         while True:
+            self.mqtt_client.ensure_connected(self.OPTIONS.mqtt_reconnect_attempts)
+
             for server in self.servers:
-                # update server state from modbus
-                server.read_batches()
-
-                # index required registers from saved state
-                # publish to ha
-                for register_name in server.write_parameters:
-                    value = server.read_from_state(register_name)
+                for write_register_name, _ in server.write_parameters.items():
+                    sleep(READ_INTERVAL)
+                    value = server.read_registers(write_register_name)
+                    self.mqtt_client.publish_to_ha(
+                        write_register_name, value, server)
+                logger.info(
+                    f"Published all Write parameter values for {server.name=}")
+                for register_name, details in server.parameters.items():
+                    sleep(READ_INTERVAL)
+                    value = server.read_registers(register_name)
                     self.mqtt_client.publish_to_ha(
                         register_name, value, server)
-                    
-                logger.info(f"Published all Write parameter values for {server.name}")
-                sleep(READ_INTERVAL)
-
-                for register_name in server.parameters:
-                    value = server.read_from_state(register_name)
-                    self.mqtt_client.publish_to_ha(
-                        register_name, value, server)
-                logger.info(f"Published all Read parameter values for {server.name}")
-            logger.info("")
-
-            if loop_once:
+                logger.info(
+                    f"Published all Read parameter values for {server.name=}")
+            if loop_once:   # for debug/ testing
                 break
 
             # publish availability
@@ -176,20 +269,13 @@ class App:
             sleep(sleep_duration)
 
 
-def instantiate_clients(OPTIONS: Options) -> list[Client]:
-    return [Client(cl_options) for cl_options in OPTIONS.clients]
-
-
-def instantiate_servers(OPTIONS: Options, clients: list[Client]) -> list[Server]:
-    return [
-        ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients)
-        for sr in OPTIONS.servers
-    ]
 
 
 if __name__ == "__main__":
     if len(sys.argv) <= 1:  # deployed on homeassistant
-        app = App(instantiate_clients, instantiate_servers)
+        device_instantiator = RealDeviceInstantiator()
+        app = App(device_instantiator=device_instantiator, 
+                  message_handler_instantiator=MessageHandler)
         app.setup()
         app.connect()
         app.loop()
@@ -199,10 +285,25 @@ if __name__ == "__main__":
             # Format with timestamp
             format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",  # Date format
-)
-        
+        )
+
         from .client import SpoofClient
-        app = App(instantiate_clients, instantiate_servers, sys.argv[1])
+
+        @final
+        class SpoofDeviceInstantiator(RealDeviceInstantiator):
+            @staticmethod
+            def instantiate_clients(OPTIONS: AppOptions) -> list[SpoofClient]:
+                return [SpoofClient() for cl_options in OPTIONS.clients]
+
+            @staticmethod
+            def instantiate_servers(OPTIONS: AppOptions, clients: list[Client]) -> list[Server]:
+                return [
+                    ServerTypes[sr.server_type].value.from_ServerOptions(sr, clients)
+                    for sr in OPTIONS.servers
+                ]
+
+        device_instantiator = SpoofDeviceInstantiator()
+        app = App(device_instantiator, MessageHandler, sys.argv[1])
         app.OPTIONS.mqtt_host = "localhost"
         app.OPTIONS.mqtt_port = 1884
         app.OPTIONS.pause_interval_seconds = 10
@@ -211,8 +312,8 @@ if __name__ == "__main__":
             return [SpoofClient()]
 
         app = App(
-            client_instantiator_callback=instantiate_spoof_clients,
-            server_instantiator_callback=instantiate_servers,
+            device_instantiator=SpoofDeviceInstantiator,
+            message_handler_instantiator=MessageHandler,
             options_rel_path="config.yaml"
         )
 

@@ -42,7 +42,7 @@ def validate_server_implemented(servers: list):
             )
 
 
-def validate_options(opts: Options) -> None:
+def validate_options(opts: AppOptions) -> None:
     client_names = [c.name for c in opts.clients]
     server_names = [s.name for s in opts.servers]
     validate_names(client_names)
@@ -62,7 +62,7 @@ def read_yaml(json_rel_path):
     return data
 
 
-def load_options(json_rel_path="/data/options.json") -> Options:
+def load_options(json_rel_path="/data/options.json") -> AppOptions:
     """Load server, client configurations and connection specs as dicts from options json."""
     converter = Converter()
 
@@ -83,11 +83,11 @@ def load_options(json_rel_path="/data/options.json") -> Options:
         raise FileNotFoundError(
             f"Config options json/yaml not found at {os.path.join(os.getcwd(), json_rel_path)}")
 
-    opts = converter.structure(data, Options)
+    opts = converter.structure(data, AppOptions)
     return opts
 
 
-def load_validate_options(json_rel_path="/data/options.json") -> Options:
+def load_validate_options(json_rel_path="/data/options.json") -> AppOptions:
     """Load and Validate Options"""
     opts = load_options(json_rel_path)
 

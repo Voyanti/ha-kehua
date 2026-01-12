@@ -3,9 +3,9 @@ from functools import lru_cache
 import logging
 from typing import Any, Optional, TypedDict
 
-from .helpers import slugify
+from .helpers import slugify, with_retries
 from .enums import DataType, HAEntityType, RegisterTypes, Parameter, DeviceClass, WriteParameter, WriteSelectParameter, device_class_to_rounding
-from .client import Client
+from .client import Client, ModbusException
 from .options import ServerOptions
 
 logger = logging.getLogger(__name__)
@@ -294,6 +294,7 @@ class Server(ABC):
         dtype = param["dtype"]
         multiplier = param["multiplier"]
         count = param["count"]
+        unit = param.get("unit")
         device_class = param.get("device_class")
         modbus_id = self.modbus_id
         register_type = param["register_type"]
@@ -313,9 +314,12 @@ class Server(ABC):
         if multiplier != 1:
             val *= multiplier
         if device_class is not None and isinstance(val, int) or isinstance(val, float):
-            val = round(
-                val, device_class_to_rounding.get(device_class, 2)) # type: ignore
-        # logger.debug(f"Decoded Value = {val} {unit}")
+            if unit and unit.startswith('k'): # starts with kilo
+                val = round(val, 1) # temp. add more precision to fields in kilo- watt/var/va
+            else:
+                val = round(
+                    val, device_class_to_rounding.get(device_class, 2))
+        logger.debug(f"Decoded Value = {val} {unit}")
 
         return val
     
@@ -328,7 +332,7 @@ class Server(ABC):
         Finds correct write register name using mapping from Server.write_registers_slug_to_name
         """
         parameter_name = self.write_parameters_slug_to_name[parameter_name_slug]
-        param: WriteParameter = self.write_parameters[parameter_name]
+        param = self.write_parameters[parameter_name]
 
         address = param["addr"]
         dtype = param["dtype"]
@@ -339,6 +343,7 @@ class Server(ABC):
         else:
             modbus_id = self.modbus_id
         register_type = param["register_type"]
+        unit = param.get("unit")
 
         if param["ha_entity_type"] == HAEntityType.SWITCH:
             value = int(value, base=0) # interpret string as integer literal. supports auto detecting base
@@ -352,11 +357,15 @@ class Server(ABC):
         logger.info(
             f"Writing {values} to param {parameter_name} ({register_type}) of {dtype=} from {address=}, {multiplier=}, {count=}, {modbus_id=}")
 
-        result = self.connected_client.write(values, address, modbus_id, register_type)
-
-        if result.isError():
-            self.connected_client._handle_error_response(result)
-            raise Exception(f"Error writing register {parameter_name}")
+        # attempt to write to the register 3 times
+        try:
+            with_retries(self.connected_client.write,
+                        values, address, modbus_id, register_type,
+                        exception = ModbusException,
+                        msg = f"Error writing register {parameter_name}")
+        except ModbusException as e:
+            logger.error(f"Failure to write after 3 attempts. Continuing")
+            return
 
         if param.get("unit") is not None:
             logger.info(f"Wrote {value=} unit={param.get('unit')} as {values=} to {parameter_name}.")
