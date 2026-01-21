@@ -83,12 +83,12 @@ class KehuaInverter(Server):
         # Energy Measurements
         'Daily Charge': {'addr': 5039+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.1, 'unit': 'kWh', 'device_class': DeviceClass.ENERGY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total_increasing'},
         'Daily Discharge': {'addr': 5041+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.1, 'unit': 'kWh', 'device_class': DeviceClass.ENERGY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total_increasing'},
-        'Daily Gains': {'addr': 5043+1, 'count': 2, 'dtype': DataType.I32, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total_increasing', 'multiplier':1},
+        # 'Daily Gains': {'addr': 5043+1, 'count': 2, 'dtype': DataType.I32, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total_increasing', 'multiplier':1},
 
         'Total Charge': {'addr': 5045+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.1, 'unit': 'kWh', 'device_class': DeviceClass.ENERGY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total'},
         'Total Discharge': {'addr': 5047+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.1, 'unit': 'kWh', 'device_class': DeviceClass.ENERGY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total'},
-        'Total Gains': {'addr': 5049+1, 'count': 2, 'dtype': DataType.I32, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total', 'multiplier':1},
-        'Current Electricity Price': {'addr': 5051+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.0001, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
+        # 'Total Gains': {'addr': 5049+1, 'count': 2, 'dtype': DataType.I32, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'total', 'multiplier':1},
+        # 'Current Electricity Price': {'addr': 5051+1, 'count': 2, 'dtype': DataType.U32, 'multiplier': 0.0001, 'unit': 'Yuan', 'device_class': DeviceClass.MONETARY, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
 
         'Available Power': {'addr': 5054+1, 'count': 1, 'dtype': DataType.U16, 'multiplier': 0.1, 'unit': 'kVA', 'device_class': DeviceClass.APPARENT_POWER, 'register_type': RegisterTypes.INPUT_REGISTER, 'state_class': 'measurement'},
         'Remote Control Status': {'addr': 5055+1, 'count': 1, 'dtype': DataType.U16, 'register_type': RegisterTypes.INPUT_REGISTER, 'device_class': DeviceClass.ENUM, 'multiplier':1, 'unit':''},
