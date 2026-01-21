@@ -1,5 +1,5 @@
 name: "Kehua Inverter"
-version: "0.2.4"
+version: "0.2.5"
 image: ghcr.io/voyanti/ha-kehua
 slug: "ha-kehua"
 description: "Kehua Inverter"
