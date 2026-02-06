@@ -201,8 +201,15 @@ class Server(ABC):
         register_type = self.parameters[register_name]['register_type']
         slave_id = self.modbus_id
 
-        response = self.connected_client.read(
-            address, count, slave_id, register_type)
+        try:
+            response = self.connected_client.read(
+                address, count, slave_id, register_type)
+        except ModbusException as e:
+            logger.error(f"{e}")
+            return False
+        except OSError as e:
+            logger.error(f"{e}")
+            return False
 
         if response.isError():
             self.connected_client._handle_error_response(response)
@@ -373,6 +380,13 @@ class Server(ABC):
             logger.info(f"Wrote {value=} as {values=} to {parameter_name}.")
 
     def connect(self):
+        logger.debug(f"Connecting to server {self}")
+        try:
+            self.connected_client.connect()
+        except ConnectionError:
+            logger.error(f"Could not connect to the modbus client while attempting server connection")
+            raise
+
         if not self.is_available():
             logger.error(f"Server {self.name} not available")
             raise ConnectionError()
