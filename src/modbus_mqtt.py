@@ -59,7 +59,7 @@ class MqttClient(mqtt.Client):
         def on_message(client, userdata, message):
             logger.info("Received message on MQTT")
             try: 
-                self.message_handler(msg.topic, msg.payload.decode('utf-8'))
+                self.message_handler(message.topic, message.payload.decode('utf-8'))
 
             except Exception as e:
                 logger.error(f"Exception while handling received message. Stop Process. \n {e}")
