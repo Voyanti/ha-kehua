@@ -1,2 +1,2 @@
 [mypy]
-python_path = src
+python_path = "src"
