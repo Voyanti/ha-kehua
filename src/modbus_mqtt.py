@@ -40,6 +40,14 @@ class MqttClient(mqtt.Client):
         self.base_topic = options.mqtt_base_topic
         self.ha_discovery_topic = options.mqtt_ha_discovery_topic
 
+        # Addon-level ("bridge") availability. Registered as the MQTT Last Will
+        # so the broker publishes "offline" on our behalf if the process dies
+        # uncleanly (crash, SIGKILL, OOM, power/network loss) — cases where
+        # exit_handler never runs. Every entity depends on this topic in
+        # addition to its per-device topic (availability_mode: all).
+        self.bridge_availability_topic = f"{self.base_topic}_bridge/availability"
+        self.will_set(self.bridge_availability_topic, "offline", qos=1, retain=True)
+
         def on_connect(client, userdata, connect_flags, reason_code, properties):
             if reason_code == 0:
                 logger.info(f"Connected to MQTT broker.")
@@ -71,6 +79,26 @@ class MqttClient(mqtt.Client):
 
         self.message_handler = Callable[[str, str], None]
 
+    def _availability_topic(self, server) -> str:
+        """Per-device availability topic. Single source of truth for both the
+        discovery payload and publish_availability so they can never desync."""
+        return f"{self.base_topic}_{server.name}/availability"
+
+    def _availability_block(self, server) -> dict:
+        """Discovery fields making an entity depend on BOTH its device topic
+        and the addon bridge topic (available only when both report online)."""
+        return {
+            "availability": [
+                {"topic": self._availability_topic(server)},
+                {"topic": self.bridge_availability_topic},
+            ],
+            "availability_mode": "all",
+        }
+
+    def publish_bridge_availability(self, avail: bool) -> None:
+        self.publish(self.bridge_availability_topic,
+                     "online" if avail else "offline", qos=1, retain=True)
+
     def publish_discovery_topics(self, server) -> None:
         # TODO check if more separation from server is necessary/ possible
         nickname = server.name
@@ -91,8 +119,6 @@ class MqttClient(mqtt.Client):
 
         # publish discovery topics for legal registers
         # assume registers in server.registers
-        availability_topic = f"{self.base_topic}_{nickname}/availability"
-
         parameters = server.parameters
 
         for register_name, details in parameters.items():
@@ -101,10 +127,10 @@ class MqttClient(mqtt.Client):
                 "name": register_name,
                 "unique_id": f"{nickname}_{slugify(register_name)}",
                 "state_topic": state_topic,
-                "availability_topic": availability_topic,
                 "device": device,
                 # "device_class": details["device_class"].value,
             }
+            discovery_payload.update(self._availability_block(server))
             if details["device_class"] is not None:
                 discovery_payload["device_class"] = details["device_class"].value
             if details["unit"] != "":
@@ -133,9 +159,9 @@ class MqttClient(mqtt.Client):
                 "name": register_name,
                 "unique_id": f"{nickname}_{slugify(register_name)}",
                 # "unit_of_measurement": details["unit"],
-                "availability_topic": availability_topic,
                 "device": device,
             }
+            discovery_payload.update(self._availability_block(server))
             if details.get("unit") is not None:
                 discovery_payload.update(unit_of_measurement=details["unit"])
             if details.get("options") is not None:
@@ -162,8 +188,7 @@ class MqttClient(mqtt.Client):
             
 
     def publish_availability(self, avail, server):
-        nickname = server.name
-        availability_topic = f"{self.base_topic}_{nickname}/availability"
+        availability_topic = self._availability_topic(server)
         msg_info = self.publish(availability_topic,
                      "online" if avail else "offline", qos=1, retain=True)
         
