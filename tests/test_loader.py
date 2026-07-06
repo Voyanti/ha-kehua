@@ -15,7 +15,7 @@ class TestLoaders(unittest.TestCase):
             validate_names(["asdf", "asdf", "as"])
 
         with self.assertRaisesRegex(
-            ValueError, "Client names must be alphanumeric"
+            ValueError, "names must be alphanumeric"
         ) as cm:
             validate_names(["A*"])
 
