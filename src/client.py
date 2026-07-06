@@ -3,15 +3,11 @@ from .enums import RegisterTypes
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from pymodbus.pdu import ExceptionResponse, ModbusPDU
-from pymodbus.exceptions import ModbusIOException
+from pymodbus.exceptions import ModbusIOException, ModbusException
 import logging
 from .options import ModbusTCPOptions, ModbusRTUOptions
 from time import sleep
 logger = logging.getLogger(__name__)
-
-class ModbusException(Exception):
-    def __init__(self, *args):
-        super().__init__(*args)
 
 class Client:
     """

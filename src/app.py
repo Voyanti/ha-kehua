@@ -10,9 +10,10 @@ from typing import final
 
 from .loader import load_validate_options
 from .options import AppOptions
+from pymodbus import ModbusException
 from .client import Client
 from .implemented_servers import ServerTypes
-from .server import Server
+from .server import ReadException, Server
 from .modbus_mqtt import MqttClient
 from paho.mqtt.enums import MQTTErrorCode
 from paho.mqtt.client import MQTTMessage
@@ -250,8 +251,16 @@ class App:
                             register_name, value, server)
                     logger.info(
                         f"Published all Read parameter values for {server.name=}")
+                except ReadException as rerr:
+                    logger.warning(f"Device returned error code response for {server.name=}")
+                    self.disconnect_stack.append(server)
+                    continue
+                except ModbusException as e:
+                    logger.error(f"Modbus error while reading from {server.name=}: {e}")
+                    self.disconnect_stack.append(server)
+                    continue
                 except Exception as e:
-                    logger.error(f"Error reading from {server.name=}: {e}")
+                    logger.error(f"Unexpected error reading from {server.name=}: {e}")
                     self.disconnect_stack.append(server)
                     continue
 
