@@ -5,6 +5,7 @@ import logging
 import yaml
 from cattrs import structure, unstructure, Converter
 from .options import *
+from .enums import DeviceClass, device_class_to_rounding
 from .implemented_servers import ServerTypes
 
 logger = logging.getLogger(__name__)
@@ -42,12 +43,45 @@ def validate_server_implemented(servers: list):
             )
 
 
+def validate_rounding_overrides(overrides: list[RoundingOption]) -> None:
+    """Validate that each override names a real HA device class and a sane decimal count."""
+    seen = set()
+    for override in overrides:
+        try:
+            device_class = DeviceClass(override.ha_device_class)
+        except ValueError:
+            raise ValueError(
+                f"Rounding override ha_device_class '{override.ha_device_class}' is not a "
+                f"valid Home Assistant device class"
+            )
+        if device_class in seen:
+            raise ValueError(
+                f"Duplicate rounding override for ha_device_class '{override.ha_device_class}'"
+            )
+        seen.add(device_class)
+
+        if not 0 <= override.n_decimals <= 6:
+            raise ValueError(
+                f"Rounding override n_decimals for '{override.ha_device_class}' must be in 0..6, "
+                f"got {override.n_decimals}"
+            )
+
+
+def build_rounding_map(opts: AppOptions) -> dict[DeviceClass, int]:
+    """Merge the user's rounding_overrides over the enums.device_class_to_rounding defaults."""
+    rounding = dict(device_class_to_rounding)
+    for override in opts.rounding_overrides:
+        rounding[DeviceClass(override.ha_device_class)] = override.n_decimals
+    return rounding
+
+
 def validate_options(opts: AppOptions) -> None:
     client_names = [c.name for c in opts.clients]
     server_names = [s.name for s in opts.servers]
     validate_names(client_names)
     validate_names(server_names)
     validate_server_implemented(opts.servers)
+    validate_rounding_overrides(opts.rounding_overrides)
 
 
 def read_json(json_rel_path):

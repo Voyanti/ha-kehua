@@ -1,5 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
+
+
+@dataclass
+class RoundingOption:
+    """ Per-device-class decimal rounding override as read from config json """
+    ha_device_class: str
+    n_decimals: int
 
 
 @dataclass
@@ -52,3 +59,7 @@ class AppOptions:
     mqtt_ha_discovery_topic: str
     mqtt_base_topic: str
     mqtt_reconnect_attempts: int
+
+    # Overrides the built-in enums.device_class_to_rounding defaults. Optional:
+    # absent from options.json means "use the defaults as-is".
+    rounding_overrides: list[RoundingOption] = field(default_factory=list)

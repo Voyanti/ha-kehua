@@ -31,6 +31,10 @@ class Server(ABC):
         self.modbus_id: int = modbus_id
         self.connected_client: Client = connected_client
 
+        # Decimals to round decoded values to, per device class. Overridable from
+        # add-on options; see loader.build_rounding_map.
+        self.rounding: dict[DeviceClass, int] = dict(device_class_to_rounding)
+
         self._model: str = "unknown"
 
         self.holding_state: list[int] = []      # registers read over self.holding_extent   (min, max)
@@ -284,7 +288,7 @@ class Server(ABC):
             val *= multiplier
         if device_class is not None and isinstance(val, int) or isinstance(val, float):
             val = round(
-                val, device_class_to_rounding.get(device_class, 2)) # type: ignore
+                val, self.rounding.get(device_class, 2)) # type: ignore
         # logger.debug(f"Decoded Value = {val} {unit}")
 
         return val
@@ -332,7 +336,7 @@ class Server(ABC):
                 val = round(val, 1) # temp. add more precision to fields in kilo- watt/var/va
             else:
                 val = round(
-                    val, device_class_to_rounding.get(device_class, 2))
+                    val, self.rounding.get(device_class, 2))
         logger.debug(f"Decoded Value = {val} {unit}")
 
         return val
@@ -406,7 +410,8 @@ class Server(ABC):
     def from_ServerOptions(
         cls,
         opts: ServerOptions,
-        clients: list[Client]
+        clients: list[Client],
+        rounding: Optional[dict[DeviceClass, int]] = None
     ):
         """
         Initialises modbus_mqtt.server.Server from modbus_mqtt.loader.ServerOptions object
@@ -415,6 +420,8 @@ class Server(ABC):
         -----------
             - sr_options: modbus_mqtt.loader.ServerOptions - options as read from config json
             - clients: list[modbus_mqtt.client.Client] - list of all TCP/Serial clients connected to machine
+            - rounding: decimals per device class, as merged by loader.build_rounding_map.
+                        None keeps the enums.device_class_to_rounding defaults.
         """
         name = opts.name
         serial = opts.serialnum
@@ -430,4 +437,7 @@ class Server(ABC):
             )
         connected_client = clients[idx]
 
-        return cls(name, serial, modbus_id, connected_client)
+        server = cls(name, serial, modbus_id, connected_client)
+        if rounding is not None:
+            server.rounding = rounding
+        return server

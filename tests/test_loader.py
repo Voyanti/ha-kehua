@@ -52,6 +52,37 @@ class TestLoaders(unittest.TestCase):
 
         validate_server_implemented(servers)
 
+    # Rounding overrides
+    def test_validate_rounding_overrides_raises(self):
+        with self.assertRaisesRegex(ValueError, "not a valid Home Assistant device class"):
+            validate_rounding_overrides([RoundingOption("powr", 1)])
+
+        with self.assertRaisesRegex(ValueError, "must be in 0..6"):
+            validate_rounding_overrides([RoundingOption("power", 9)])
+
+        with self.assertRaisesRegex(ValueError, "Duplicate rounding override"):
+            validate_rounding_overrides(
+                [RoundingOption("power", 0), RoundingOption("power", 1)]
+            )
+
+    def test_validate_rounding_overrides_not_raise(self):
+        validate_rounding_overrides([])
+        validate_rounding_overrides([RoundingOption("power", 0), RoundingOption("energy", 2)])
+
+    def test_build_rounding_map_overrides_defaults(self):
+        """Overrides win; unlisted device classes keep their built-in default."""
+        opts = load_options(self.yaml_path)
+        opts.rounding_overrides = [RoundingOption("power", 3)]
+
+        rounding = build_rounding_map(opts)
+
+        self.assertEqual(rounding[DeviceClass.POWER], 3)
+        self.assertEqual(
+            rounding[DeviceClass.CURRENT], device_class_to_rounding[DeviceClass.CURRENT]
+        )
+        # defaults must not be mutated
+        self.assertNotEqual(device_class_to_rounding[DeviceClass.POWER], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

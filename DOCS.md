@@ -80,6 +80,27 @@ To ensure proper working of the scada system,
 2. Configure the CoCT with the topics of the relevant states and commands required as stated in its docs.
 3. Start/Restart this addon, followed by the CoCT scade addon. This will set all production constraints, and ramp constraints to 100% or 100%/min.
 
+## Rounding
+
+Decoded values are rounded before publishing, to the number of decimals configured for
+their Home Assistant device class. `rounding_overrides` overrides the built-in defaults
+in `enums.device_class_to_rounding`:
+
+```
+  rounding_overrides:
+    - ha_device_class: power
+      n_decimals: 0
+    - ha_device_class: energy
+      n_decimals: 1
+```
+
+- `ha_device_class` must be a valid [HA sensor device class](https://www.home-assistant.io/integrations/sensor/#device-class) string, e.g. `power`, `energy`, `voltage`, `current`, `frequency`, `apparent_power`, `reactive_power`, `power_factor`. Unknown values fail validation at startup.
+- `n_decimals` must be between 0 and 6.
+- Device classes not listed keep their built-in default; anything with no default at all is rounded to 2 decimals.
+- Changes take effect on add-on restart. This rounds at the source, so it also reduces
+  recorder churn for noisy sensors — unlike the per-entity **Display precision** setting
+  in the HA UI, which only affects how the value is displayed.
+
 # Development
 
 ## Running locally
