@@ -12,3 +12,5 @@ schema.yaml
 venv
 pdfs/
 *.ipynb
+.env
+.DS_Store
